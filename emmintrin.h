@@ -349,16 +349,212 @@ FORCE_INLINE __m128i _mm_div_epu16(__m128i a, __m128i b)
     return res_m128i;
 }
 
+#define MM_SLL_VECT_S64_SET(res, a, mc) \
+    res.vect_s64 = vshlq_n_s64(a.vect_s64, mc);
 FORCE_INLINE __m128i _mm_sll_epi64(__m128i a, __m128i count)
 {
     long long c = count.vect_s64[0];
-    int mc = c;
     __m128i result_m128i;
     if (likely(c >= 0 && c < 64)) {
-        result_m128i.vect_s64 = vshlq_n_s64(a.vect_s64, mc);
-    } else {
+        switch (c)
+        {
+        case 0:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 0);
+            break;
+        case 1:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 1);
+            break;
+        case 2:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 2);
+            break;
+        case 3:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 3);
+            break;
+        case 4:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 4);
+            break;
+        case 5:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 5);
+            break;
+        case 6:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 6);
+            break;
+        case 7:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 7);
+            break;
+        case 8:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 8);
+            break;
+        case 9:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 9);
+            break;
+        case 10:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 10);
+            break;
+        case 11:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 11);
+            break;
+        case 12:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 12);
+            break;
+        case 13:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 13);
+            break;
+        case 14:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 14);
+            break;
+        case 15:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 15);
+            break;
+        case 16:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 16);
+            break;
+        case 17:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 17);
+            break;
+        case 18:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 18);
+            break;
+        case 19:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 19);
+            break;
+        case 20:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 20);
+            break;
+        case 21:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 21);
+            break;
+        case 22:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 22);
+            break;
+        case 23:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 23);
+            break;
+        case 24:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 24);
+            break;
+        case 25:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 25);
+            break;
+        case 26:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 26);
+            break;
+        case 27:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 27);
+            break;
+        case 28:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 28);
+            break;
+        case 29:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 29);
+            break;
+        case 30:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 30);
+            break;
+        case 31:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 31);
+            break;
+        case 32:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 32);
+            break;
+        case 33:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 33);
+            break;
+        case 34:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 34);
+            break;
+        case 35:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 35);
+            break;
+        case 36:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 36);
+            break;
+        case 37:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 37);
+            break;
+        case 38:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 38);
+            break;
+        case 39:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 39);
+            break;
+        case 40:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 40);
+            break;
+        case 41:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 41);
+            break;
+        case 42:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 42);
+            break;
+        case 43:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 43);
+            break;
+        case 44:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 44);
+            break;
+        case 45:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 45);
+            break;
+        case 46:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 46);
+            break;
+        case 47:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 47);
+            break;
+        case 48:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 48);
+            break;
+        case 49:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 49);
+            break;
+        case 50:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 50);
+            break;
+        case 51:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 51);
+            break;
+        case 52:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 52);
+            break;
+        case 53:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 53);
+            break;
+        case 54:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 54);
+            break;
+        case 55:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 55);
+            break;
+        case 56:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 56);
+            break;
+        case 57:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 57);
+            break;
+        case 58:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 58);
+            break;
+        case 59:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 59);
+            break;
+        case 60:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 60);
+            break;
+        case 61:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 61);
+            break;
+        case 62:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 62);
+            break;
+        case 63:
+            MM_SLL_VECT_S64_SET(result_m128i, a, 63);
+            break;
+        }
+    }
+    else {
         result_m128i.vect_s64 = vdupq_n_s64(0);
-    } 
+    }
     return result_m128i;
 }
 
@@ -761,6 +957,13 @@ FORCE_INLINE int neg_fun(int res, int lb, int imm8, int bound)
 FORCE_INLINE int _mm_cmpestri(__m128i a, int la, __m128i b, int lb, const int imm8)
 {
     int bound = (imm8 & 0x01) ? 8 : 16;
+#if defined(_MSC_VER) && defined(__clang__)
+    // Clang-cl does not support 'asr' in inline asm for ARM, so use C code
+    if (la < 0) la = 0;
+    if (lb < 0) lb = 0;
+    if (la > bound) la = bound;
+    if (lb > bound) lb = bound;
+#else
     __asm__ __volatile__ (
         "eor w0, %w[a], %w[a], asr31          \n\t"
         "sub %w[a], w0, %w[a], asr31          \n\t"
@@ -774,6 +977,7 @@ FORCE_INLINE int _mm_cmpestri(__m128i a, int la, __m128i b, int lb, const int im
         :[bd]"r"(bound)
         :"w0", "w1"
     );
+#endif
 
     int r2 = g_CmpestrFuncList[imm8 & 0x0f].cmpFun(a, la, b, lb);
     r2 = neg_fun(r2, lb, imm8, bound);
@@ -784,6 +988,13 @@ FORCE_INLINE __m128i _mm_cmpestrm(__m128i a, int la, __m128i b, int lb, const in
 {
     __m128i dst;
     int bound = (imm8 & 0x01) ? 8 : 16;
+#if defined(_MSC_VER) && defined(__clang__)
+    // Clang-cl does not support 'asr' in inline asm for ARM, so use C code
+    if (la < 0) la = 0;
+    if (lb < 0) lb = 0;
+    if (la > bound) la = bound;
+    if (lb > bound) lb = bound;
+#else
     __asm__ __volatile__ (
         "eor w0, %w[a], %w[a], asr31          \n\t"
         "sub %w[a], w0, %w[a], asr31          \n\t"
@@ -797,6 +1008,7 @@ FORCE_INLINE __m128i _mm_cmpestrm(__m128i a, int la, __m128i b, int lb, const in
         :[bd]"r"(bound)
         :"w0", "w1"
     );
+#endif
 
     int r2 = g_CmpestrFuncList[imm8 & 0x0f].cmpFun(a, la, b, lb);
     r2 = neg_fun(r2, lb, imm8, bound);
@@ -822,10 +1034,28 @@ FORCE_INLINE __m128i _mm_cmpestrm(__m128i a, int la, __m128i b, int lb, const in
     return dst;
 }
 
-FORCE_INLINE __m128i _mm_insert_epi32 (__m128i a, int i, const int imm8)
+FORCE_INLINE __m128i _mm_insert_epi32(__m128i a, int i, const int imm8)
 {
     assert(imm8 >= 0 && imm8 <= 3);
-    a.vect_s32 = vsetq_lane_s32(i, a.vect_s32, imm8);
+    switch (imm8)
+    {
+    case 0:
+        a.vect_s32 = vsetq_lane_s32(i, a.vect_s32, 0);
+        break;
+    case 1:
+        a.vect_s32 = vsetq_lane_s32(i, a.vect_s32, 1);
+        break;
+    case 2:
+        a.vect_s32 = vsetq_lane_s32(i, a.vect_s32, 2);
+        break;
+    case 3:
+        a.vect_s32 = vsetq_lane_s32(i, a.vect_s32, 3);
+        break;
+    default:
+        // never do this
+        a.vect_s32 = vsetq_lane_s32(i, a.vect_s32, 0);
+        break;
+    }
     return a;
 }
 
@@ -1019,31 +1249,75 @@ FORCE_INLINE __m128i _mm_setzero_si128()
     res.vect_s32 = vdupq_n_s32(0);
     return res;
 }
-
+#define MM_SLLI_SI128_CASE_STAT(a, res, imm8)\
+    res.vect_s8 = vextq_s8(zero, a.vect_s8, 16 - imm8);
 FORCE_INLINE __m128i _mm_slli_si128(__m128i a, const int imm8)
 {
-	__m128i res;
-	if (imm8 > 0 && imm8 <= 15) {
-		int8x16_t zero = vdupq_n_s8(0);
-		__asm__ __volatile__ (
-			"ext %0.16b, %1.16b, %2.16b, #%3"
-			: "=w"(res.vect_s8)
-			: "w"(zero), "w"(a.vect_s8), "i"(16 - imm8)
-			: /*No clobbers */);
-	} else if (imm8 == 0) {
-		res = a;
-	} else {
-		res.vect_s8 = vdupq_n_s8(0);
-	}
-	return res;
-}
-
-FORCE_INLINE __m128i _mm_srli_si128 (__m128i a, int imm8)
-{
-    assert(imm8 >=0 && imm8 < 256);
     __m128i res;
-    if (likely(imm8 > 0 && imm8 <= 15)) {
-        res.vect_s8 = vextq_s8(a.vect_s8, vdupq_n_s8(0), (imm8));
+    if (imm8 > 0 && imm8 <= 15) {
+        int8x16_t zero = vdupq_n_s8(0);
+#if defined(_MSC_VER) && defined(__clang__)
+        // Clang-cl does not support 'i' constraint for immediates in inline asm.
+        // Use NEON intrinsic instead.
+        switch (imm8)
+        {
+        case 1:
+            MM_SLLI_SI128_CASE_STAT(a, res, 1);
+            break;
+        case 2:
+            MM_SLLI_SI128_CASE_STAT(a, res, 2);
+            break;
+        case 3:
+            MM_SLLI_SI128_CASE_STAT(a, res, 3);
+            break;
+        case 4:
+            MM_SLLI_SI128_CASE_STAT(a, res, 4);
+            break;
+        case 5:
+            MM_SLLI_SI128_CASE_STAT(a, res, 5);
+            break;
+        case 6:
+            MM_SLLI_SI128_CASE_STAT(a, res, 6);
+            break;
+        case 7:
+            MM_SLLI_SI128_CASE_STAT(a, res, 7);
+            break;
+        case 8:
+            MM_SLLI_SI128_CASE_STAT(a, res, 8);
+            break;
+        case 9:
+            MM_SLLI_SI128_CASE_STAT(a, res, 9);
+            break;
+        case 10:
+            MM_SLLI_SI128_CASE_STAT(a, res, 10);
+            break;
+        case 11:
+            MM_SLLI_SI128_CASE_STAT(a, res, 11);
+            break;
+        case 12:
+            MM_SLLI_SI128_CASE_STAT(a, res, 12);
+            break;
+        case 13:
+            MM_SLLI_SI128_CASE_STAT(a, res, 13);
+            break;
+        case 14:
+            MM_SLLI_SI128_CASE_STAT(a, res, 14);
+            break;
+        case 15:
+            MM_SLLI_SI128_CASE_STAT(a, res, 15);
+            break;
+        default:
+            // this will never access
+            MM_SLLI_SI128_CASE_STAT(a, res, 1);
+            break;
+        }
+#else
+        __asm__ __volatile__ (
+            "ext %0.16b, %1.16b, %2.16b, #%3"
+            : "=w"(res.vect_s8)
+            : "w"(zero), "w"(a.vect_s8), "i"(16 - imm8)
+            : /*No clobbers */);
+#endif
     } else if (imm8 == 0) {
         res = a;
     } else {
@@ -1052,22 +1326,390 @@ FORCE_INLINE __m128i _mm_srli_si128 (__m128i a, int imm8)
     return res;
 }
 
+#define MM_SRLI_SI128_SET_CASE_STAT(a, res, imm8) \
+    res.vect_s8 = vextq_s8(a.vect_s8, vdupq_n_s8(0), (imm8));
+FORCE_INLINE __m128i _mm_srli_si128 (__m128i a, int imm8)
+{
+    assert(imm8 >=0 && imm8 < 256);
+    __m128i res;
+    if (likely(imm8 > 0 && imm8 <= 15)) {
+        switch (imm8)
+        {
+        case 1:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 1);
+            break;
+        case 2:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 2);
+            break;
+        case 3:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 3);
+            break;
+        case 4:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 4);
+            break;
+        case 5:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 5);
+            break;
+        case 6:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 6);
+            break;
+        case 7:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 7);
+            break;
+        case 8:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 8);
+            break;
+        case 9:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 9);
+            break;
+        case 10:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 10);
+            break;
+        case 11:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 11);
+            break;
+        case 12:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 12);
+            break;
+        case 13:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 13);
+            break;
+        case 14:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 14);
+            break;
+        case 15:
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 15);
+            break;
+        default:
+            // this will never access
+            MM_SRLI_SI128_SET_CASE_STAT(a, res, 1);
+            break;
+        }
+    } else if (imm8 == 0) {
+        res = a;
+    } else {
+        res.vect_s8 = vdupq_n_s8(0);
+    }
+    return res;
+}
+
+#define MM_SLLI_SEPI32_CASE_STAT(a, res, imm8) \
+    res.vect_s32 = vshlq_n_s32(a.vect_s32, imm8);
 FORCE_INLINE __m128i _mm_slli_epi32 (__m128i a, int imm8)
 {
     __m128i res;
     if (likely(imm8 >= 0 && imm8 < 32)) {
-        res.vect_s32 = vshlq_n_s32(a.vect_s32, imm8);
+        switch (imm8)
+        {
+        case 1:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 1);
+            break;
+        case 2:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 2);
+            break;
+        case 3:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 3);
+            break;
+        case 4:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 4);
+            break;
+        case 5:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 5);
+            break;
+        case 6:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 6);
+            break;
+        case 7:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 7);
+            break;
+        case 8:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 8);
+            break;
+        case 9:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 9);
+            break;
+        case 10:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 10);
+            break;
+        case 11:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 11);
+            break;
+        case 12:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 12);
+            break;
+        case 13:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 13);
+            break;
+        case 14:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 14);
+            break;
+        case 15:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 15);
+            break;
+        case 16:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 16);
+            break;
+        case 17:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 17);
+            break;
+        case 18:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 18);
+            break;
+        case 19:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 19);
+            break;
+        case 20:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 20);
+            break;
+        case 21:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 21);
+            break;
+        case 22:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 22);
+            break;
+        case 23:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 23);
+            break;
+        case 24:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 24);
+            break;
+        case 25:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 25);
+            break;
+        case 26:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 26);
+            break;
+        case 27:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 27);
+            break;
+        case 28:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 28);
+            break;
+        case 29:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 29);
+            break;
+        case 30:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 30);
+            break;
+        case 31:
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 31);
+            break;
+        default:
+            // this will never access
+            MM_SLLI_SEPI32_CASE_STAT(a, res, 1);
+            break;
+        }
     } else {
         res.vect_s32 = vdupq_n_s32(0);
     } 
     return res;
 }
 
+#define MM_SLLI_EPI64_CASE_STST(a, res, imm8) \
+    res.vect_s64 = vshlq_n_s64(a.vect_s64, imm8);   
 FORCE_INLINE __m128i _mm_slli_epi64 (__m128i a, int imm8)
 {
     __m128i res;
     if (likely(imm8 >= 0 && imm8 < 64)) {
-        res.vect_s64 = vshlq_n_s64(a.vect_s64, imm8);
+        switch (imm8)
+        {
+        case 0:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 0);
+            break;
+        case 1:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 1);
+            break;
+        case 2:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 2);
+            break;
+        case 3:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 3);
+            break;
+        case 4:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 4);
+            break;
+        case 5:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 5);
+            break;
+        case 6:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 6);
+            break;
+        case 7:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 7);
+            break;
+        case 8:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 8);
+            break;
+        case 9:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 9);
+            break;
+        case 10:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 10);
+            break;
+        case 11:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 11);
+            break;
+        case 12:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 12);
+            break;
+        case 13:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 13);
+            break;
+        case 14:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 14);
+            break;
+        case 15:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 15);
+            break;
+        case 16:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 16);
+            break;
+        case 17:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 17);
+            break;
+        case 18:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 18);
+            break;
+        case 19:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 19);
+            break;
+        case 20:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 20);
+            break;
+        case 21:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 21);
+            break;
+        case 22:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 22);
+            break;
+        case 23:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 23);
+            break;
+        case 24:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 24);
+            break;
+        case 25:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 25);
+            break;
+        case 26:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 26);
+            break;
+        case 27:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 27);
+            break;
+        case 28:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 28);
+            break;
+        case 29:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 29);
+            break;
+        case 30:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 30);
+            break;
+        case 31:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 31);
+            break;
+        case 32:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 32);
+            break;
+        case 33:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 33);
+            break;
+        case 34:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 34);
+            break;
+        case 35:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 35);
+            break;
+        case 36:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 36);
+            break;
+        case 37:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 37);
+            break;
+        case 38:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 38);
+            break;
+        case 39:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 39);
+            break;
+        case 40:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 40);
+            break;
+        case 41:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 41);
+            break;
+        case 42:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 42);
+            break;
+        case 43:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 43);
+            break;
+        case 44:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 44);
+            break;
+        case 45:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 45);
+            break;
+        case 46:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 46);
+            break;
+        case 47:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 47);
+            break;
+        case 48:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 48);
+            break;
+        case 49:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 49);
+            break;
+        case 50:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 50);
+            break;
+        case 51:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 51);
+            break;
+        case 52:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 52);
+            break;
+        case 53:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 53);
+            break;
+        case 54:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 54);
+            break;
+        case 55:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 55);
+            break;
+        case 56:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 56);
+            break;
+        case 57:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 57);
+            break;
+        case 58:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 58);
+            break;
+        case 59:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 59);
+            break;
+        case 60:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 60);
+            break;
+        case 61:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 61);
+            break;
+        case 62:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 62);
+            break;
+        case 63:
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 63);
+            break;
+        default:
+            // this will never access
+            res.vect_s64 = vshlq_n_s64(a.vect_s64, 0);
+            break;
+        }
     } else {
         res.vect_s64 = vdupq_n_s64(0);
     } 
@@ -1145,22 +1787,34 @@ FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a,__m128i b)
     return res;
 }
 
-FORCE_INLINE void* _mm_malloc (size_t size, size_t align)
+#include <stdlib.h>
+#ifdef _WIN32
+#include <malloc.h>
+#endif
+
+FORCE_INLINE void* _mm_malloc(size_t size, size_t align)
 {
-    void *ptr;
+    void* ptr = NULL;
+#ifdef _WIN32
+    ptr = _aligned_malloc(size, align);
+#else
     if (align == 1)
-        return malloc (size);
-    if (align == 2 || (sizeof (void *) == 8 && align == 4))
-        align = sizeof (void *);
-    if (posix_memalign (&ptr, align, size) == 0)
-        return ptr;
-    else
-        return NULL;
+        return malloc(size);
+    if (align == 2 || (sizeof(void*) == 8 && align == 4))
+        align = sizeof(void*);
+    if (posix_memalign(&ptr, align, size) != 0)
+        ptr = NULL;
+#endif
+    return ptr;
 }
 
-FORCE_INLINE void _mm_free (void * mem_addr)
+FORCE_INLINE void _mm_free(void* mem_addr)
 {
+#ifdef _WIN32
+    _aligned_free(mem_addr);
+#else
     free(mem_addr);
+#endif
 }
 
 FORCE_INLINE __m128i _mm_subs_epu8(__m128i a, __m128i b)

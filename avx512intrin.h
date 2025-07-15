@@ -732,6 +732,36 @@ FORCE_INLINE __m512i _mm512_permutex2var_epi32 (__m512i a, __m512i idx, __m512i 
     return res;
 }
 
+//FORCE_INLINE __mmask64 _mm512_test_epi8_mask(__m512i a, __m512i b)
+//{
+//    uint8x16_t mask_and = vld1q_u8(g_mask_epi8);
+//    __m512i tmp;
+//    tmp.vect_u8[0] = vandq_u8(vtstq_u8(a.vect_u8[0], b.vect_u8[0]), mask_and);
+//    tmp.vect_u8[1] = vandq_u8(vtstq_u8(a.vect_u8[1], b.vect_u8[1]), mask_and);
+//    tmp.vect_u8[2] = vandq_u8(vtstq_u8(a.vect_u8[2], b.vect_u8[2]), mask_and);
+//    tmp.vect_u8[3] = vandq_u8(vtstq_u8(a.vect_u8[3], b.vect_u8[3]), mask_and);
+//    uint8_t r[8];
+//    __asm__ __volatile__ (
+//        "addv %b[r0], %[t0].8b              \n\t"
+//        "addv %b[r2], %[t1].8b              \n\t"
+//        "addv %b[r4], %[t2].8b              \n\t"
+//        "addv %b[r6], %[t3].8b              \n\t"
+//        "ins %[t0].d[0], %[t0].d[1]         \n\t"
+//        "ins %[t1].d[0], %[t1].d[1]         \n\t"
+//        "ins %[t2].d[0], %[t2].d[1]         \n\t"
+//        "ins %[t3].d[0], %[t3].d[1]         \n\t"
+//        "addv %b[r1], %[t0].8b              \n\t"
+//        "addv %b[r3], %[t1].8b              \n\t"
+//        "addv %b[r5], %[t2].8b              \n\t"
+//        "addv %b[r7], %[t3].8b              \n\t"
+//        :[r0]"=w"(r[0]), [r1]"=w"(r[1]), [r2]"=w"(r[2]), [r3]"=w"(r[3]), [r4]"=w"(r[4]), [r5]"=w"(r[5]), [r6]"=w"(r[6]),
+//         [r7]"=w"(r[7]), 
+//         [t0]"+w"(tmp.vect_u8[0]), [t1]"+w"(tmp.vect_u8[1]), [t2]"+w"(tmp.vect_u8[2]), [t3]"+w"(tmp.vect_u8[3])
+//    );
+//    uint64x1_t res = vreinterpret_u64_u8(vld1_u8((const uint8_t *)r));
+//    return vget_lane_u64(res, 0);
+//}
+
 FORCE_INLINE __mmask64 _mm512_test_epi8_mask(__m512i a, __m512i b)
 {
     uint8x16_t mask_and = vld1q_u8(g_mask_epi8);
@@ -740,26 +770,19 @@ FORCE_INLINE __mmask64 _mm512_test_epi8_mask(__m512i a, __m512i b)
     tmp.vect_u8[1] = vandq_u8(vtstq_u8(a.vect_u8[1], b.vect_u8[1]), mask_and);
     tmp.vect_u8[2] = vandq_u8(vtstq_u8(a.vect_u8[2], b.vect_u8[2]), mask_and);
     tmp.vect_u8[3] = vandq_u8(vtstq_u8(a.vect_u8[3], b.vect_u8[3]), mask_and);
-    uint8_t r[8];
-    __asm__ __volatile__ (
-        "addv %b[r0], %[t0].8b              \n\t"
-        "addv %b[r2], %[t1].8b              \n\t"
-        "addv %b[r4], %[t2].8b              \n\t"
-        "addv %b[r6], %[t3].8b              \n\t"
-        "ins %[t0].d[0], %[t0].d[1]         \n\t"
-        "ins %[t1].d[0], %[t1].d[1]         \n\t"
-        "ins %[t2].d[0], %[t2].d[1]         \n\t"
-        "ins %[t3].d[0], %[t3].d[1]         \n\t"
-        "addv %b[r1], %[t0].8b              \n\t"
-        "addv %b[r3], %[t1].8b              \n\t"
-        "addv %b[r5], %[t2].8b              \n\t"
-        "addv %b[r7], %[t3].8b              \n\t"
-        :[r0]"=w"(r[0]), [r1]"=w"(r[1]), [r2]"=w"(r[2]), [r3]"=w"(r[3]), [r4]"=w"(r[4]), [r5]"=w"(r[5]), [r6]"=w"(r[6]),
-         [r7]"=w"(r[7]), 
-         [t0]"+w"(tmp.vect_u8[0]), [t1]"+w"(tmp.vect_u8[1]), [t2]"+w"(tmp.vect_u8[2]), [t3]"+w"(tmp.vect_u8[3])
-    );
-    uint64x1_t res = vreinterpret_u64_u8(vld1_u8((const uint8_t *)r));
-    return vget_lane_u64(res, 0);
+    // Portable fallback for Windows ARM/clangcl: avoid inline asm
+    uint64_t result = 0;
+    for (int i = 0; i < 4; ++i) {
+        uint8x16_t v = tmp.vect_u8[i];
+        uint16_t mask = 0;
+        uint8_t vals[16];
+        vst1q_u8(vals, v);
+        for (int j = 0; j < 16; ++j) {
+            if (vals[j]) mask |= (1u << j);
+        }
+        result |= ((uint64_t)mask) << (i * 16);
+    }
+    return result;
 }
 
 FORCE_INLINE __mmask16 _mm512_test_epi32_mask(__m512i a, __m512i b)
@@ -968,33 +991,440 @@ FORCE_INLINE __m512 _mm512_mul_round_ps(__m512 a, __m512 b, int rounding)
     return res_m512;
 }
 
+#define M512I_SLL_VECT_S64_SET(res, a, c) \
+    res.vect_s64[0] = vshlq_n_s64(a.vect_s64[0], c); \
+    res.vect_s64[1] = vshlq_n_s64(a.vect_s64[1], c); \
+    res.vect_s64[2] = vshlq_n_s64(a.vect_s64[2], c); \
+    res.vect_s64[3] = vshlq_n_s64(a.vect_s64[3], c);
 FORCE_INLINE __m512i _mm512_sll_epi64(__m512i a, __m128i count)
 {
     int c = count.vect_s64[0];
     __m512i result_m512i;
+    result_m512i.vect_s64[0] = vdupq_n_s64(0);
+    result_m512i.vect_s64[1] = vdupq_n_s64(0);
+    result_m512i.vect_s64[2] = vdupq_n_s64(0);
+    result_m512i.vect_s64[3] = vdupq_n_s64(0);
     if (likely(c >= 0 && c < 64)) {
-        result_m512i.vect_s64[0] = vshlq_n_s64(a.vect_s64[0], c);
-        result_m512i.vect_s64[1] = vshlq_n_s64(a.vect_s64[1], c);
-        result_m512i.vect_s64[2] = vshlq_n_s64(a.vect_s64[2], c);
-        result_m512i.vect_s64[3] = vshlq_n_s64(a.vect_s64[3], c);
-    } else {
+        switch (c)
+        {
+        case 0:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 0);
+            break;
+        case 1:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 1);
+            break;
+        case 2:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 2);
+            break;
+        case 3:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 3);
+            break;
+        case 4:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 4);
+            break;
+        case 5:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 5);
+            break;
+        case 6:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 6);
+            break;
+        case 7:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 7);
+            break;
+        case 8:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 8);
+            break;
+        case 9:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 9);
+            break;
+        case 10:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 10);
+            break;
+        case 11:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 11);
+            break;
+        case 12:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 12);
+            break;
+        case 13:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 13);
+            break;
+        case 14:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 14);
+            break;
+        case 15:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 15);
+            break;
+        case 16:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 16);
+            break;
+        case 17:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 17);
+            break;
+        case 18:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 18);
+            break;
+        case 19:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 19);
+            break;
+        case 20:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 20);
+            break;
+        case 21:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 21);
+            break;
+        case 22:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 22);
+            break;
+        case 23:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 23);
+            break;
+        case 24:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 24);
+            break;
+        case 25:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 25);
+            break;
+        case 26:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 26);
+            break;
+        case 27:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 27);
+            break;
+        case 28:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 28);
+            break;
+        case 29:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 29);
+            break;
+        case 30:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 30);
+            break;
+        case 31:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 31);
+            break;
+        case 32:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 32);
+            break;
+        case 33:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 33);
+            break;
+        case 34:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 34);
+            break;
+        case 35:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 35);
+            break;
+        case 36:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 36);
+            break;
+        case 37:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 37);
+            break;
+        case 38:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 38);
+            break;
+        case 39:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 39);
+            break;
+        case 40:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 40);
+            break;
+        case 41:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 41);
+            break;
+        case 42:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 42);
+            break;
+        case 43:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 43);
+            break;
+        case 44:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 44);
+            break;
+        case 45:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 45);
+            break;
+        case 46:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 46);
+            break;
+        case 47:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 47);
+            break;
+        case 48:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 48);
+            break;
+        case 49:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 49);
+            break;
+        case 50:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 50);
+            break;
+        case 51:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 51);
+            break;
+        case 52:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 52);
+            break;
+        case 53:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 53);
+            break;
+        case 54:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 54);
+            break;
+        case 55:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 55);
+            break;
+        case 56:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 56);
+            break;
+        case 57:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 57);
+            break;
+        case 58:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 58);
+            break;
+        case 59:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 59);
+            break;
+        case 60:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 60);
+            break;
+        case 61:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 61);
+            break;
+        case 62:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 62);
+            break;
+        case 63:
+            M512I_SLL_VECT_S64_SET(result_m512i, a, 63);
+            break;
+        default:
+            break;
+        }
+    }
+    else {
         result_m512i.vect_s64[0] = vdupq_n_s64(0);
         result_m512i.vect_s64[1] = vdupq_n_s64(0);
         result_m512i.vect_s64[2] = vdupq_n_s64(0);
         result_m512i.vect_s64[3] = vdupq_n_s64(0);
-    } 
+    }
     return result_m512i;
 }
+
+#define M512I_SLLI_VECT_S64_SET(res, a, imm8) \
+    res.vect_s64[0] = vshlq_n_s64(a.vect_s64[0], imm8); \
+    res.vect_s64[1] = vshlq_n_s64(a.vect_s64[1], imm8); \
+    res.vect_s64[2] = vshlq_n_s64(a.vect_s64[2], imm8); \
+    res.vect_s64[3] = vshlq_n_s64(a.vect_s64[3], imm8);
 
 FORCE_INLINE __m512i _mm512_slli_epi64(__m512i a, unsigned int imm8)
 {
     __m512i result_m512i;
+    result_m512i.vect_s64[0] = vdupq_n_s64(0);
+    result_m512i.vect_s64[1] = vdupq_n_s64(0);
+    result_m512i.vect_s64[2] = vdupq_n_s64(0);
+    result_m512i.vect_s64[3] = vdupq_n_s64(0);
     if (likely(imm8 < 64)) {
-        result_m512i.vect_s64[0] = vshlq_n_s64(a.vect_s64[0], imm8);
-        result_m512i.vect_s64[1] = vshlq_n_s64(a.vect_s64[1], imm8);
-        result_m512i.vect_s64[2] = vshlq_n_s64(a.vect_s64[2], imm8);
-        result_m512i.vect_s64[3] = vshlq_n_s64(a.vect_s64[3], imm8);
-    } else {
+        switch (imm8)
+        {
+        case 0:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 0);
+            break;
+        case 1:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 1);
+            break;
+        case 2:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 2);
+            break;
+        case 3:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 3);
+            break;
+        case 4:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 4);
+            break;
+        case 5:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 5);
+            break;
+        case 6:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 6);
+            break;
+        case 7:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 7);
+            break;
+        case 8:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 8);
+            break;
+        case 9:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 9);
+            break;
+        case 10:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 10);
+            break;
+        case 11:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 11);
+            break;
+        case 12:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 12);
+            break;
+        case 13:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 13);
+            break;
+        case 14:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 14);
+            break;
+        case 15:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 15);
+            break;
+        case 16:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 16);
+            break;
+        case 17:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 17);
+            break;
+        case 18:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 18);
+            break;
+        case 19:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 19);
+            break;
+        case 20:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 20);
+            break;
+        case 21:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 21);
+            break;
+        case 22:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 22);
+            break;
+        case 23:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 23);
+            break;
+        case 24:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 24);
+            break;
+        case 25:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 25);
+            break;
+        case 26:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 26);
+            break;
+        case 27:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 27);
+            break;
+        case 28:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 28);
+            break;
+        case 29:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 29);
+            break;
+        case 30:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 30);
+            break;
+        case 31:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 31);
+            break;
+        case 32:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 32);
+            break;
+        case 33:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 33);
+            break;
+        case 34:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 34);
+            break;
+        case 35:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 35);
+            break;
+        case 36:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 36);
+            break;
+        case 37:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 37);
+            break;
+        case 38:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 38);
+            break;
+        case 39:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 39);
+            break;
+        case 40:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 40);
+            break;
+        case 41:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 41);
+            break;
+        case 42:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 42);
+            break;
+        case 43:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 43);
+            break;
+        case 44:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 44);
+            break;
+        case 45:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 45);
+            break;
+        case 46:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 46);
+            break;
+        case 47:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 47);
+            break;
+        case 48:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 48);
+            break;
+        case 49:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 49);
+            break;
+        case 50:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 50);
+            break;
+        case 51:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 51);
+            break;
+        case 52:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 52);
+            break;
+        case 53:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 53);
+            break;
+        case 54:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 54);
+            break;
+        case 55:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 55);
+            break;
+        case 56:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 56);
+            break;
+        case 57:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 57);
+            break;
+        case 58:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 58);
+            break;
+        case 59:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 59);
+            break;
+        case 60:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 60);
+            break;
+        case 61:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 61);
+            break;
+        case 62:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 62);
+            break;
+        case 63:
+            M512I_SLLI_VECT_S64_SET(result_m512i, a, 63);
+            break;
+        default:
+            break;
+        }
+    }
+    else {
         result_m512i.vect_s64[0] = vdupq_n_s64(0);
         result_m512i.vect_s64[1] = vdupq_n_s64(0);
         result_m512i.vect_s64[2] = vdupq_n_s64(0);
@@ -1021,18 +1451,76 @@ FORCE_INLINE __m512i _mm512_srli_epi64(__m512i a, unsigned int imm8)
     return result_m512i;
 }
 
+#define M512I_BSLLI_VECT_S8_SET(res, a, imm8) \
+    res.vect_s8[0] = vextq_s8(vdupq_n_s8(0), a.vect_s8[0], 16 - imm8); \
+    res.vect_s8[1] = vextq_s8(vdupq_n_s8(0), a.vect_s8[1], 16 - imm8); \
+    res.vect_s8[2] = vextq_s8(vdupq_n_s8(0), a.vect_s8[2], 16 - imm8); \
+    res.vect_s8[3] = vextq_s8(vdupq_n_s8(0), a.vect_s8[3], 16 - imm8);
+
 FORCE_INLINE __m512i _mm512_bslli_epi128(__m512i a, const int imm8)
 {
     assert(imm8 >= 0 && imm8 <= 255);
     __m512i res_m512i;
+    res_m512i.vect_s8[0] = vdupq_n_s8(0);
+    res_m512i.vect_s8[1] = vdupq_n_s8(0);
+    res_m512i.vect_s8[2] = vdupq_n_s8(0);
+    res_m512i.vect_s8[3] = vdupq_n_s8(0);
     if (likely(imm8 > 0 && imm8 <= 15)) {
-        res_m512i.vect_s8[0] = vextq_s8(vdupq_n_s8(0), a.vect_s8[0], 16 - imm8);
-        res_m512i.vect_s8[1] = vextq_s8(vdupq_n_s8(0), a.vect_s8[1], 16 - imm8);
-        res_m512i.vect_s8[2] = vextq_s8(vdupq_n_s8(0), a.vect_s8[2], 16 - imm8);
-        res_m512i.vect_s8[3] = vextq_s8(vdupq_n_s8(0), a.vect_s8[3], 16 - imm8);
-    } else if (imm8 == 0) {
+        switch (imm8)
+        {
+        case 1:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 1);
+            break;
+        case 2:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 2);
+            break;
+        case 3:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 3);
+            break;
+        case 4:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 4);
+            break;
+        case 5:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 5);
+            break;
+        case 6:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 6);
+            break;
+        case 7:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 7);
+            break;
+        case 8:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 8);
+            break;
+        case 9:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 9);
+            break;
+        case 10:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 10);
+            break;
+        case 11:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 11);
+            break;
+        case 12:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 12);
+            break;
+        case 13:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 13);
+            break;
+        case 14:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 14);
+            break;
+        case 15:
+            M512I_BSLLI_VECT_S8_SET(res_m512i, a, 15);
+            break;
+        default:
+            break;
+        }
+    }
+    else if (imm8 == 0) {
         res_m512i = a;
-    } else {
+    }
+    else {
         res_m512i.vect_s8[0] = vdupq_n_s8(0);
         res_m512i.vect_s8[1] = vdupq_n_s8(0);
         res_m512i.vect_s8[2] = vdupq_n_s8(0);
@@ -1041,18 +1529,76 @@ FORCE_INLINE __m512i _mm512_bslli_epi128(__m512i a, const int imm8)
     return res_m512i;
 }
 
+#define M512I_BSRLI_VECT_S8_SET(res, a, imm8) \
+    res.vect_s8[0] = vextq_s8(a.vect_s8[0], vdupq_n_s8(0), imm8); \
+    res.vect_s8[1] = vextq_s8(a.vect_s8[1], vdupq_n_s8(0), imm8); \
+    res.vect_s8[2] = vextq_s8(a.vect_s8[2], vdupq_n_s8(0), imm8); \
+    res.vect_s8[3] = vextq_s8(a.vect_s8[3], vdupq_n_s8(0), imm8);
+
 FORCE_INLINE __m512i _mm512_bsrli_epi128(__m512i a, const int imm8)
 {
     assert(imm8 >= 0 && imm8 <= 255);
     __m512i res_m512i;
+    res_m512i.vect_s8[0] = vdupq_n_s8(0);
+    res_m512i.vect_s8[1] = vdupq_n_s8(0);
+    res_m512i.vect_s8[2] = vdupq_n_s8(0);
+    res_m512i.vect_s8[3] = vdupq_n_s8(0);
     if (likely(imm8 > 0 && imm8 <= 15)) {
-        res_m512i.vect_s8[0] = vextq_s8(a.vect_s8[0], vdupq_n_s8(0), imm8);
-        res_m512i.vect_s8[1] = vextq_s8(a.vect_s8[1], vdupq_n_s8(0), imm8);
-        res_m512i.vect_s8[2] = vextq_s8(a.vect_s8[2], vdupq_n_s8(0), imm8);
-        res_m512i.vect_s8[3] = vextq_s8(a.vect_s8[3], vdupq_n_s8(0), imm8);
-    } else if (imm8 == 0) {
+        switch (imm8)
+        {
+        case 1:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 1);
+            break;
+        case 2:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 2);
+            break;
+        case 3:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 3);
+            break;
+        case 4:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 4);
+            break;
+        case 5:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 5);
+            break;
+        case 6:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 6);
+            break;
+        case 7:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 7);
+            break;
+        case 8:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 8);
+            break;
+        case 9:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 9);
+            break;
+        case 10:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 10);
+            break;
+        case 11:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 11);
+            break;
+        case 12:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 12);
+            break;
+        case 13:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 13);
+            break;
+        case 14:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 14);
+            break;
+        case 15:
+            M512I_BSRLI_VECT_S8_SET(res_m512i, a, 15);
+            break;
+        default:
+            break;
+        }
+    }
+    else if (imm8 == 0) {
         res_m512i = a;
-    } else {
+    }
+    else {
         res_m512i.vect_s8[0] = vdupq_n_s8(0);
         res_m512i.vect_s8[1] = vdupq_n_s8(0);
         res_m512i.vect_s8[2] = vdupq_n_s8(0);

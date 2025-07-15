@@ -2274,11 +2274,11 @@ static test_mm_crc32_u32_data_model g_test_mm_crc32_u32_data = {4195592487, 4146
 };
 
 typedef struct {
-    unsigned long crc;
-    unsigned long v;
-    unsigned long expect;
+    unsigned long long crc;
+    unsigned long long v;
+    unsigned long long expect;
 } test_mm_crc32_u64_data_model;
-static test_mm_crc32_u64_data_model g_test_mm_crc32_u64_data = {4257207552971783972, 4094426903918957320, 3846645531};
+static test_mm_crc32_u64_data_model g_test_mm_crc32_u64_data = {4257207552971783972ULL, 4094426903918957320ULL, 3846645531ULL};
 
 typedef struct {
     int8_t a[16];
@@ -2323,7 +2323,7 @@ static test_mm512_shuffle_epi8_data_model g_test_mm512_shuffle_epi8_data = {
 typedef struct {
     int8_t a[64];
     int8_t b[64];
-    unsigned long k;
+    unsigned long long k;
     int8_t expect[64];
 } test_mm512_maskz_shuffle_epi8_data_model;
 static test_mm512_maskz_shuffle_epi8_data_model g_test_mm512_maskz_shuffle_epi8_data = {
@@ -2334,7 +2334,7 @@ static test_mm512_maskz_shuffle_epi8_data_model g_test_mm512_maskz_shuffle_epi8_
     {91,  -15, 82,  -86, -10,  -62, -32, -51, -106, -36,  26,  112, -121, -76, 21,  95,   108, 63,  50,  123, -121, -89,
      -56, -92, 113, -77, -128, 0,   94,  -89, 59,   48,   123, 16,  74,   -87, -84, -124, 50,  -91, -43, -26, -37,  -89,
      -57, 86,  -83, 113, 55,   11,  51,  99,  -75,  -107, -93, -15, -43,  89,  69,  -82,  -84, -85, 102, 81},
-    0x123456789ABCDEF,
+    0x0123456789ABCDEFULL,
     {-42, 0, -9, 0, 0,   0,   0, 0, 0, 0,   122, -29,  0,    0, -52, 84, 71,  -36, 0, -37, 0, 0,
      0,   0, 30, 0, 0,   -43, 0, 0, 0, -43, -53, -105, -104, 0, 0,   0,  -68, 0,   0, 0,   0, 0,
      0,   0, 0,  0, -47, -21, 0, 0, 0, 0,   0,   0,    0,    0, 0,   0,  0,   0,   0, 0}};
@@ -3374,6 +3374,15 @@ static test_mm512_permutex2var_epi32_data_model g_test_mm512_permutex2var_epi32_
     {23,  25,  -61, 113, -122, 66,  -24,  -117, -19,  16,  -8,   66,   -50,  -92, -81, 58},
     {2000, 3000, 4000, 5000, 6000, 7000, 8000, -19, 10000, 11000, 16, 13000, 14000, 15000, 16000, 23},
 };
+
+
+#ifdef _WIN32
+// This is an workaround to make NAN available on Windows MSVC
+#ifdef NAN
+#undef NAN
+#define NAN ((float)(0.0f/0.0f))
+#endif // NAN
+#endif
 
 typedef struct {
     float32_t a[16];

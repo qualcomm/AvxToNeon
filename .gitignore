@@ -1,0 +1,50 @@
+﻿# 编译产物
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.idb
+*.ilk
+*.iobj
+*.ipdb
+*.rsp
+*.log
+*.tlog
+*.tmp
+*.cache
+*.bsc
+*.pch
+
+# 构建输出目录
+[Bb]uild*/
+[Rr]elease*/
+[Dd]ebug*/
+x64/
+x86/
+ARM/
+ARM64/
+bin/
+obj/
+out/
+
+# Visual Studio 相关 IDE 文件
+.vs/
+*.suo
+*.user
+*.userosscache
+*.VC.db
+*.VC.opendb
+*.sln.docstates
+
+# CMake 构建中间文件
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+build/
+
+# 插件和编辑器缓存
+.idea/
+.vscode/
+*.code-workspace
