@@ -350,7 +350,12 @@ typedef enum {
     UT_MM_PACKS_EPI32,
     UT_MM256_PACKS_EPI32,
     UT_MM512_PACKS_EPI32,
-    UT_MM_MALLOC
+    UT_MM_MALLOC,
+    UT_MM_FMADD_PS,
+    UT_MM_MASK_FMADD_PS,
+    UT_MM_FMADD_PD,
+    UT_MM_MASK_FMADD_PD,
+    UT_MM_MAX,
 } InstructionTest;
 
 const char *RunTest(InstructionTest test, int *flag);
@@ -694,5 +699,8 @@ int test_mm_packs_epi32();
 int test_mm256_packs_epi32();
 int test_mm512_packs_epi32();
 int test_mm_malloc();
-
+int test_mm_fmadd_ps();
+int test_mm_mask_fmadd_ps();
+int test_mm_fmadd_pd();
+int test_mm_mask_fmadd_pd();
 #endif

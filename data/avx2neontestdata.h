@@ -3568,4 +3568,62 @@ typedef struct {
 } test_mm_malloc_data_model;
 static test_mm_malloc_data_model g_test_mm_malloc_data = {128, 128};
 
+typedef struct {
+    float32_t a[4];
+    float32_t b[4];
+    float32_t c[4];
+    float32_t expect[4];
+} test_mm_fmadd_ps_model;
+// expect = (a * b) + c
+static test_mm_fmadd_ps_model g_test_mm_fmadd_ps_data = {
+    {1.0f, 2.0f, 3.0f, 4.0f},
+    {3.0f, 2.0f, 1.0f, 2.0f},
+    {3.0f, 3.0f, 5.0f, 5.0f},
+    {6.0f, 7.0f, 8.0f, 13.0f}
+};
+
+typedef struct {
+    float32_t a[4];
+    unsigned char k;
+    float32_t b[4];
+    float32_t c[4];
+    float32_t expect[4];
+} test_mm_mask_fmadd_ps_model;
+// k is mask decide which 32bit to do FMA
+static test_mm_mask_fmadd_ps_model g_test_mm_mask_fmadd_ps_data = {
+    {1.0f, 2.0f, 3.0f, 4.0f},
+    0b0111,
+    {3.0f, 2.0f, 1.0f, 2.0f},
+    {3.0f, 3.0f, 5.0f, 5.0f},
+    {6.0f, 7.0f, 8.0f, 4.0f}
+};
+
+typedef struct {
+    double a[2];
+    double b[2];
+    double c[2];
+    double expect[2];
+} test_mm_fmadd_pd_model;
+// expect = (a * b) + c
+static test_mm_fmadd_pd_model g_test_mm_fmadd_pd_data = {
+    {1.1, 2.2},
+    {3.3, 4.56},
+    {0.0, 2.0},
+    {3.63, 12.032}
+};
+
+typedef struct {
+    double a[2];
+    unsigned char k;
+    double b[2];
+    double c[2];
+    double expect[2];
+} test_mm_mask_fmadd_pd_model;
+static test_mm_mask_fmadd_pd_model g_test_mm_mask_fmadd_pd_data = {
+    {1.1, 2.2},
+    0b01,
+    {3.3, 4.56},
+    {0.0, 2.0},
+    {3.63, 2.2}
+};
 #endif

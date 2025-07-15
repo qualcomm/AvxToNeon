@@ -1849,3 +1849,42 @@ FORCE_INLINE __m128i _mm_cmpgt_epi16(__m128i a, __m128i b)
 	dst.vect_u16 = vcgtq_s16(a.vect_s16, b.vect_s16);
 	return dst;
 }
+
+// for AVX FMA Intrinsic 3'rd param c is dest c = (a * b)
+// for ARM NEON Intrinsic 1'st param is dest
+FORCE_INLINE __m128 _mm_fmadd_ps(__m128 a, __m128 b, __m128 c)
+{
+    return vfmaq_f32(c, a, b);
+}
+
+// k is mask which decide whether to do FMA or not
+// This is an extension of _mm_fmadd_ps
+FORCE_INLINE __m128 _mm_mask_fmadd_ps(__m128 a, __mmask8 k, __m128 b, __m128 c)
+{
+    assert(k <= 0xF);
+    uint32_t m0 = (k & 0x1) ? 0xFFFFFFFF : 0;
+    uint32_t m1 = (k & 0x2) ? 0xFFFFFFFF : 0;
+    uint32_t m2 = (k & 0x4) ? 0xFFFFFFFF : 0;
+    uint32_t m3 = (k & 0x8) ? 0xFFFFFFFF : 0;
+
+    uint32x4_t mask = (uint32x4_t){ m0, m1, m2, m3 };
+    float32x4_t muladd = vfmaq_f32(c, a, b);
+    float32x4_t result = vbslq_f32(mask, muladd, a);
+    return result;
+}
+
+FORCE_INLINE __m128d _mm_fmadd_pd(__m128d a, __m128d b, __m128d c)
+{
+    return vfmaq_f64(c, a, b);
+}
+
+FORCE_INLINE __m128d _mm_mask_fmadd_pd(__m128d a, __mmask8 k, __m128d b, __m128d c)
+{
+    assert(k <= 0x3);
+    uint64_t m0 = (k & 0x1) ? 0xFFFFFFFFFFFFFFFF : 0;
+    uint64_t m1 = (k & 0x2) ? 0xFFFFFFFFFFFFFFFF : 0;
+    uint64x2_t mask = (uint64x2_t){ m0, m1 };
+    float64x2_t muladd = vfmaq_f64(c, a, b);
+    float64x2_t result = vbslq_f64(mask, muladd, a);
+    return result;
+}
