@@ -9,7 +9,7 @@
 #define AVX2NEONTESTDATA_H
 
 #include <arm_neon.h>
-
+#include "typedefs.h"
 // 一个结构体对应一个接口测试数据模型
 // 每个接口生成一组测试数据，供测试demo使用
 // expect位接口返回值，其余为接口输入参数数据
@@ -2747,8 +2747,8 @@ static test_mm256_maskload_epi32_data_model g_test_mm256_maskload_epi32_data = {
 };
 
 typedef struct {
-    int32_t __attribute__((aligned(64))) a[16];
-    int32_t __attribute__((aligned(64))) expect[16];
+    int32_t ALIGN_STRUCT(64) a[16];
+    int32_t ALIGN_STRUCT(64) expect[16];
 } test_mm512_load_si512_data_model;
 static test_mm512_load_si512_data_model g_test_mm512_load_si512_data = {
     {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -3443,10 +3443,19 @@ static long long test_mm256_cmp_pd_data_model_ordered_ret[32][4] = {
     {0, -1, 0, 0},   {-1, 0, -1, 0},   {-1, -1, -1, 0}, {0, 0, 0, 0},     {-1, 0, -1, -1}, {0, -1, 0, -1},
     {0, 0, 0, -1},   {-1, -1, -1, -1}};
 
-static __m256 test_mm256_cmp_ps_data_model_unordered_data1 = {77.690002, NAN, 0.000000, -12.500000, NAN, 6678.346191, \
-                                                              453.345001, NAN};
-static __m256 test_mm256_cmp_ps_data_model_unordered_data2 = {-7.690000, 88.690002, -100.639999, -13.778000, NAN, \
-                                                              6678.346191, NAN, 856.778015};
+typedef struct {
+    float s1_unordered[8];
+    float s2_unordered[8];
+    float s1_ordered[8];
+    float s2_ordered[8];
+} test_mm256_cmp_ps_data_model;
+static test_mm256_cmp_ps_data_model test_mm256_cmp_ps_data = {
+    {77.690002, NAN, 0.000000, -12.500000, NAN, 6678.346191, 453.345001, NAN},
+    {-7.690000, 88.690002, -100.639999, -13.778000, NAN, 6678.346191, NAN, 856.778015},
+    {77.690002, 0.000000, -12.500000, 6678.346191, 453.345001, 54646.460938, -477.345001, 2134.333008},
+    {-7.690000, 88.690002, -100.639999, -13.778000, 6678.346191, 856.435730, 6678.346191, 41124.238281}
+};
+
 static int test_mm256_cmp_ps_data_model_unordered_ret[32][8] = {
     {0, 0, 0, 0, 0, -1, 0, 0},        {0, 0, 0, 0, 0, 0, 0, 0},        {0, 0, 0, 0, 0, -1, 0, 0}, 
     {0, -1, 0, 0, -1, 0, -1, -1},     {-1, -1, -1, -1, -1, 0, -1, -1}, {-1, -1, -1, -1, -1, -1, -1, -1}, 
@@ -3459,10 +3468,7 @@ static int test_mm256_cmp_ps_data_model_unordered_ret[32][8] = {
     {0, -1, 0, 0, -1, -1, -1, -1},    {0, -1, 0, 0, -1, 0, -1, -1},    {0, -1, 0, 0, -1, -1, -1, -1},
     {0, 0, 0, 0, 0, 0, 0, 0},         {-1, 0, -1, -1, 0, 0, 0, 0},     {-1, 0, -1, -1, 0, -1, 0, 0}, 
     {-1, 0, -1, -1, 0, 0, 0, 0},      {-1, -1, -1, -1, -1, -1, -1, -1}};
-static __m256 test_mm256_cmp_ps_data_model_ordered_data1 = {77.690002, 0.000000, -12.500000, 6678.346191, 453.345001, \
-                                                            54646.460938, -477.345001, 2134.333008};
-static __m256 test_mm256_cmp_ps_data_model_ordered_data2 = {-7.690000, 88.690002, -100.639999, -13.778000, \
-                                                            6678.346191, 856.435730, 6678.346191, 41124.238281};
+
 static int test_mm256_cmp_ps_data_model_ordered_ret[32][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0},         {0, -1, 0, 0, -1, 0, -1, -1},     {0, -1, 0, 0, -1, 0, -1, -1}, 
     {0, 0, 0, 0, 0, 0, 0, 0},         {-1, -1, -1, -1, -1, -1, -1, -1}, {-1, 0, -1, -1, 0, -1, 0, 0}, 

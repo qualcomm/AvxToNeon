@@ -10,6 +10,13 @@ set(SOURCE_FILES
 	main.c
 )
 
-set(ARCH_CFLAGS "-march=armv8-a+fp+simd+crc+fp16")
+message(STATUS "CMAKE_C_COMPILER_ID: ${CMAKE_C_COMPILER_ID}")
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+	message("[MY MSG] Using C Compiler MSVC")
+else()
+	message("[MY MSG] Using C Compiler ${CMAKE_C_COMPILER_ID}")
+	set(ARCH_CFLAGS "-march=armv8-a+fp+simd+crc+fp16")
+endif()
+
 add_executable(test ${SOURCE_FILES})
 target_compile_options(test PRIVATE ${ARCH_CFLAGS})

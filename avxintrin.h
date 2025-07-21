@@ -29,6 +29,20 @@ using namespace std;
 
 #include "typedefs.h"
 
+#if defined(_MSC_VER) && !defined(__clang__)
+typedef ALIGN_STRUCT(32) union {
+    int8x16_t vect_s8[2];
+    int16x8_t vect_s16[2];
+    int32x4_t vect_s32[2];
+    int64x2_t vect_s64[2];
+    uint8x16_t vect_u8[2];
+    uint16x8_t vect_u16[2];
+    uint32x4_t vect_u32[2];
+    uint64x2_t vect_u64[2];
+    __m128i vect_i128[2];
+} __m256i;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
 typedef union {
     int8x16_t vect_s8[2];
     int16x8_t vect_s16[2];
@@ -40,6 +54,7 @@ typedef union {
     uint64x2_t vect_u64[2];
     __m128i vect_i128[2];
 } __m256i __attribute__((aligned(32)));
+#endif
 
 typedef struct {
     float32x4_t vect_f32[2];
@@ -354,36 +369,75 @@ FORCE_INLINE __m256d _mm256_add_pd(__m256d a, __m256d b)
     return res_m256d;
 }
 
-FORCE_INLINE __m256 _mm256_addsub_ps (__m256 a, __m256 b)
+// FORCE_INLINE __m256 _mm256_addsub_ps (__m256 a, __m256 b)
+// {
+//     __m256 c = _mm256_setzero_ps();
+//     __asm__ __volatile__ (
+//         "fsub %2.4s, %0.4s, %4.4s        \n\t"
+//         "fsub %3.4s, %1.4s, %5.4s        \n\t"
+//         "fadd %0.4s, %0.4s, %4.4s        \n\t"
+//         "fadd %1.4s, %1.4s, %5.4s        \n\t"
+//         "mov %2.s[1], %0.s[1]           \n\t"
+//         "mov %3.s[1], %1.s[1]           \n\t"
+//         "mov %2.s[3], %0.s[3]           \n\t"
+//         "mov %3.s[3], %1.s[3]           \n\t"
+//         :"+w"(a.vect_f32[0]), "+w"(a.vect_f32[1]), "+w"(c.vect_f32[0]), "+w"(c.vect_f32[1])
+//         :"w"(b.vect_f32[0]), "w"(b.vect_f32[1])
+//     );
+//     return c;
+// }
+
+FORCE_INLINE __m256 _mm256_addsub_ps(__m256 a, __m256 b)
 {
-    __m256 c = _mm256_setzero_ps();
-    __asm__ __volatile__ (
-        "fsub %2.4s, %0.4s, %4.4s        \n\t"
-        "fsub %3.4s, %1.4s, %5.4s        \n\t"
-        "fadd %0.4s, %0.4s, %4.4s        \n\t"
-        "fadd %1.4s, %1.4s, %5.4s        \n\t"
-        "mov %2.s[1], %0.s[1]           \n\t"
-        "mov %3.s[1], %1.s[1]           \n\t"
-        "mov %2.s[3], %0.s[3]           \n\t"
-        "mov %3.s[3], %1.s[3]           \n\t"
-        :"+w"(a.vect_f32[0]), "+w"(a.vect_f32[1]), "+w"(c.vect_f32[0]), "+w"(c.vect_f32[1])
-        :"w"(b.vect_f32[0]), "w"(b.vect_f32[1])
-    );
+    const uint32_t mask_data[4] = {0xFFFFFFFF, 0x00000000, 0xFFFFFFFF, 0x00000000};
+    uint32x4_t mask = vld1q_u32(mask_data);
+
+    float32x4_t add0 = vaddq_f32(a.vect_f32[0], b.vect_f32[0]);
+    float32x4_t sub0 = vsubq_f32(a.vect_f32[0], b.vect_f32[0]);
+    float32x4_t add1 = vaddq_f32(a.vect_f32[1], b.vect_f32[1]);
+    float32x4_t sub1 = vsubq_f32(a.vect_f32[1], b.vect_f32[1]);
+
+    float32x4_t result0 = vbslq_f32(mask, sub0, add0);
+    float32x4_t result1 = vbslq_f32(mask, sub1, add1);
+
+    __m256 c;
+    c.vect_f32[0] = result0;
+    c.vect_f32[1] = result1;
     return c;
 }
-FORCE_INLINE __m256d _mm256_addsub_pd (__m256d a, __m256d b)
+
+// FORCE_INLINE __m256d _mm256_addsub_pd (__m256d a, __m256d b)
+// {
+//     __m256d c = _mm256_setzero_pd();
+//     __asm__ __volatile__ (
+//         "fsub %2.2d, %0.2d, %4.2d        \n\t"
+//         "fsub %3.2d, %1.2d, %5.2d        \n\t"
+//         "fadd %0.2d, %0.2d, %4.2d        \n\t"
+//         "fadd %1.2d, %1.2d, %5.2d        \n\t"
+//         "mov %2.d[1], %0.d[1]           \n\t"
+//         "mov %3.d[1], %1.d[1]           \n\t"
+//         :"+w"(a.vect_f64[0]), "+w"(a.vect_f64[1]), "+w"(c.vect_f64[0]), "+w"(c.vect_f64[1])
+//         :"w"(b.vect_f64[0]), "w"(b.vect_f64[1])
+//     );
+//     return c;
+// }
+
+FORCE_INLINE __m256d _mm256_addsub_pd(__m256d a, __m256d b)
 {
-    __m256d c = _mm256_setzero_pd();
-    __asm__ __volatile__ (
-        "fsub %2.2d, %0.2d, %4.2d        \n\t"
-        "fsub %3.2d, %1.2d, %5.2d        \n\t"
-        "fadd %0.2d, %0.2d, %4.2d        \n\t"
-        "fadd %1.2d, %1.2d, %5.2d        \n\t"
-        "mov %2.d[1], %0.d[1]           \n\t"
-        "mov %3.d[1], %1.d[1]           \n\t"
-        :"+w"(a.vect_f64[0]), "+w"(a.vect_f64[1]), "+w"(c.vect_f64[0]), "+w"(c.vect_f64[1])
-        :"w"(b.vect_f64[0]), "w"(b.vect_f64[1])
-    );
+    const uint64_t mask_data[2] = {0xFFFFFFFFFFFFFFFF, 0x0000000000000000};
+    uint64x2_t mask = vld1q_u64(mask_data);
+
+    float64x2_t add0 = vaddq_f64(a.vect_f64[0], b.vect_f64[0]);
+    float64x2_t sub0 = vsubq_f64(a.vect_f64[0], b.vect_f64[0]);
+    float64x2_t add1 = vaddq_f64(a.vect_f64[1], b.vect_f64[1]);
+    float64x2_t sub1 = vsubq_f64(a.vect_f64[1], b.vect_f64[1]);
+
+    float64x2_t result0 = vbslq_f64(mask, sub0, add0);
+    float64x2_t result1 = vbslq_f64(mask, sub1, add1);
+
+    __m256d c;
+    c.vect_f64[0] = result0;
+    c.vect_f64[1] = result1;
     return c;
 }
 
@@ -467,36 +521,77 @@ FORCE_INLINE __m256i _mm256_subs_epu8(__m256i a, __m256i b)
     return res_m256i;
 }
 
+// FORCE_INLINE __m256i _mm256_mul_epi32(__m256i a, __m256i b)
+// {
+//     __asm__ __volatile__ (
+//         "ins %[a0].s[1], %[a0].s[2]             \n\t"
+//         "ins %[a1].s[1], %[a1].s[2]             \n\t"
+//         "ins %[b0].s[1], %[b0].s[2]             \n\t"
+//         "ins %[b1].s[1], %[b1].s[2]             \n\t"
+//         "smull %[a0].2d, %[a0].2s, %[b0].2s     \n\t"
+//         "smull %[a1].2d, %[a1].2s, %[b1].2s     \n\t"
+//         :[a0]"+w"(a.vect_s32[0]), [a1]"+w"(a.vect_s32[1]), [b0]"+w"(b.vect_s32[0]), [b1]"+w"(b.vect_s32[1])
+//         :
+//         :
+//     );
+//     return a;
+// }
+
+
 FORCE_INLINE __m256i _mm256_mul_epi32(__m256i a, __m256i b)
 {
-    __asm__ __volatile__ (
-        "ins %[a0].s[1], %[a0].s[2]             \n\t"
-        "ins %[a1].s[1], %[a1].s[2]             \n\t"
-        "ins %[b0].s[1], %[b0].s[2]             \n\t"
-        "ins %[b1].s[1], %[b1].s[2]             \n\t"
-        "smull %[a0].2d, %[a0].2s, %[b0].2s     \n\t"
-        "smull %[a1].2d, %[a1].2s, %[b1].2s     \n\t"
-        :[a0]"+w"(a.vect_s32[0]), [a1]"+w"(a.vect_s32[1]), [b0]"+w"(b.vect_s32[0]), [b1]"+w"(b.vect_s32[1])
-        :
-        :
-    );
-    return a;
+    int32x2_t a0_even =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[0], 2) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[0], 0));
+    int32x2_t a1_even =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[1], 2) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[1], 0));
+    int32x2_t b0_even =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[0], 2) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[0], 0));
+    int32x2_t b1_even =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[1], 2) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[1], 0));
+
+    int64x2_t r0 = vmull_s32(a0_even, b0_even);
+    int64x2_t r1 = vmull_s32(a1_even, b1_even);
+
+    __m256i result;
+    result.vect_s64[0] = r0;
+    result.vect_s64[1] = r1;
+    return result;
 }
+
+// FORCE_INLINE __m256i _mm256_mul_epu32(__m256i a, __m256i b)
+// {
+//     __asm__ __volatile__ (
+//         "ins %[a0].s[1], %[a0].s[2]             \n\t"
+//         "ins %[a1].s[1], %[a1].s[2]             \n\t"
+//         "ins %[b0].s[1], %[b0].s[2]             \n\t"
+//         "ins %[b1].s[1], %[b1].s[2]             \n\t"
+//         "umull %[a0].2d, %[a0].2s, %[b0].2s     \n\t"
+//         "umull %[a1].2d, %[a1].2s, %[b1].2s     \n\t"
+//         :[a0]"+w"(a.vect_u32[0]), [a1]"+w"(a.vect_u32[1]), [b0]"+w"(b.vect_u32[0]), [b1]"+w"(b.vect_u32[1])
+//         :
+//         :
+//     );
+//     return a;
+// }
 
 FORCE_INLINE __m256i _mm256_mul_epu32(__m256i a, __m256i b)
 {
-    __asm__ __volatile__ (
-        "ins %[a0].s[1], %[a0].s[2]             \n\t"
-        "ins %[a1].s[1], %[a1].s[2]             \n\t"
-        "ins %[b0].s[1], %[b0].s[2]             \n\t"
-        "ins %[b1].s[1], %[b1].s[2]             \n\t"
-        "umull %[a0].2d, %[a0].2s, %[b0].2s     \n\t"
-        "umull %[a1].2d, %[a1].2s, %[b1].2s     \n\t"
-        :[a0]"+w"(a.vect_u32[0]), [a1]"+w"(a.vect_u32[1]), [b0]"+w"(b.vect_u32[0]), [b1]"+w"(b.vect_u32[1])
-        :
-        :
-    );
-    return a;
+    uint32x2_t a0_even =
+        vcreate_u32(((uint64_t)vgetq_lane_u32(a.vect_u32[0], 2) << 32) | vgetq_lane_u32(a.vect_u32[0], 0));
+    uint32x2_t a1_even =
+        vcreate_u32(((uint64_t)vgetq_lane_u32(a.vect_u32[1], 2) << 32) | vgetq_lane_u32(a.vect_u32[1], 0));
+    uint32x2_t b0_even =
+        vcreate_u32(((uint64_t)vgetq_lane_u32(b.vect_u32[0], 2) << 32) | vgetq_lane_u32(b.vect_u32[0], 0));
+    uint32x2_t b1_even =
+        vcreate_u32(((uint64_t)vgetq_lane_u32(b.vect_u32[1], 2) << 32) | vgetq_lane_u32(b.vect_u32[1], 0));
+
+    uint64x2_t r0 = vmull_u32(a0_even, b0_even);
+    uint64x2_t r1 = vmull_u32(a1_even, b1_even);
+
+    __m256i result;
+    result.vect_u64[0] = r0;
+    result.vect_u64[1] = r1;
+    return result;
 }
 
 FORCE_INLINE __m256d _mm256_mul_pd(__m256d a, __m256d b)
@@ -515,49 +610,96 @@ FORCE_INLINE __m256 _mm256_mul_ps(__m256 a, __m256 b)
     return res_m256;
 }
 
+// FORCE_INLINE __m256i _mm256_mulhi_epi16(__m256i a, __m256i b)
+// {
+//     __asm__ __volatile__ (
+//         "mov v4.d[0], %[a0].d[1]                    \n\t"
+//         "mov v5.d[0], %[a1].d[1]                    \n\t"
+//         "smull %[a0].4s, %[a0].4h, %[b0].4h         \n\t"
+//         "mov v6.d[0], %[b0].d[1]                    \n\t"
+//         "mov v7.d[0], %[b1].d[1]                    \n\t"
+//         "smull %[b0].4s, v4.4h, v6.4h               \n\t"
+//         "uzp2  %[a0].8h, %[a0].8h, %[b0].8h         \n\t"
+//         "smull %[a1].4s, %[a1].4h, %[b1].4h         \n\t"
+//         "smull %[b1].4s, v5.4h, v7.4h               \n\t"
+//         "uzp2  %[a1].8h, %[a1].8h, %[b1].8h         \n\t"
+//         :[a0]"+w"(a.vect_s16[0]), [a1]"+w"(a.vect_s16[1]), [b0]"+w"(b.vect_s16[0]), [b1]"+w"(b.vect_s16[1])
+//         :
+//         :"v4", "v5", "v6", "v7"
+//     );
+//     return a;
+// }
+
 FORCE_INLINE __m256i _mm256_mulhi_epi16(__m256i a, __m256i b)
 {
-    __asm__ __volatile__ (
-        "mov v4.d[0], %[a0].d[1]                    \n\t"
-        "mov v5.d[0], %[a1].d[1]                    \n\t"
-        "smull %[a0].4s, %[a0].4h, %[b0].4h         \n\t"
-        "mov v6.d[0], %[b0].d[1]                    \n\t"
-        "mov v7.d[0], %[b1].d[1]                    \n\t"
-        "smull %[b0].4s, v4.4h, v6.4h               \n\t"
-        "uzp2  %[a0].8h, %[a0].8h, %[b0].8h         \n\t"
-        "smull %[a1].4s, %[a1].4h, %[b1].4h         \n\t"
-        "smull %[b1].4s, v5.4h, v7.4h               \n\t"
-        "uzp2  %[a1].8h, %[a1].8h, %[b1].8h         \n\t"
-        :[a0]"+w"(a.vect_s16[0]), [a1]"+w"(a.vect_s16[1]), [b0]"+w"(b.vect_s16[0]), [b1]"+w"(b.vect_s16[1])
-        :
-        :"v4", "v5", "v6", "v7"
-    );
-    return a;
+    int32x4_t lo0 = vmull_s16(vget_low_s16(a.vect_s16[0]), vget_low_s16(b.vect_s16[0]));
+    int32x4_t hi0 = vmull_s16(vget_high_s16(a.vect_s16[0]), vget_high_s16(b.vect_s16[0]));
+    int32x4_t lo1 = vmull_s16(vget_low_s16(a.vect_s16[1]), vget_low_s16(b.vect_s16[1]));
+    int32x4_t hi1 = vmull_s16(vget_high_s16(a.vect_s16[1]), vget_high_s16(b.vect_s16[1]));
+
+    int16x4_t r0_lo = vshrn_n_s32(lo0, 16);
+    int16x4_t r0_hi = vshrn_n_s32(hi0, 16);
+    int16x4_t r1_lo = vshrn_n_s32(lo1, 16);
+    int16x4_t r1_hi = vshrn_n_s32(hi1, 16);
+
+    __m256i result;
+    result.vect_s16[0] = vcombine_s16(r0_lo, r0_hi);
+    result.vect_s16[1] = vcombine_s16(r1_lo, r1_hi);
+    return result;
 }
+
+// FORCE_INLINE __m256i _mm256_mulhi_epu16(__m256i a, __m256i b)
+// {
+//     __asm__ __volatile__ (
+//         "mov v4.d[0], %[a0].d[1]                    \n\t"
+//         "mov v5.d[0], %[a1].d[1]                    \n\t"
+//         "umull %[a0].4s, %[a0].4h, %[b0].4h         \n\t"
+//         "mov v6.d[0], %[b0].d[1]                    \n\t"
+//         "mov v7.d[0], %[b1].d[1]                    \n\t"
+//         "umull %[b0].4s, v4.4h, v6.4h               \n\t"
+//         "uzp2  %[a0].8h, %[a0].8h, %[b0].8h         \n\t"
+//         "umull %[a1].4s, %[a1].4h, %[b1].4h         \n\t"
+//         "umull %[b1].4s, v5.4h, v7.4h               \n\t"
+//         "uzp2  %[a1].8h, %[a1].8h, %[b1].8h         \n\t"
+//         :[a0]"+w"(a.vect_u16[0]), [a1]"+w"(a.vect_u16[1]), [b0]"+w"(b.vect_u16[0]), [b1]"+w"(b.vect_u16[1])
+//         :
+//         :"v4", "v5", "v6", "v7"
+//     );
+//     return a;
+// }
 
 FORCE_INLINE __m256i _mm256_mulhi_epu16(__m256i a, __m256i b)
 {
-    __asm__ __volatile__ (
-        "mov v4.d[0], %[a0].d[1]                    \n\t"
-        "mov v5.d[0], %[a1].d[1]                    \n\t"
-        "umull %[a0].4s, %[a0].4h, %[b0].4h         \n\t"
-        "mov v6.d[0], %[b0].d[1]                    \n\t"
-        "mov v7.d[0], %[b1].d[1]                    \n\t"
-        "umull %[b0].4s, v4.4h, v6.4h               \n\t"
-        "uzp2  %[a0].8h, %[a0].8h, %[b0].8h         \n\t"
-        "umull %[a1].4s, %[a1].4h, %[b1].4h         \n\t"
-        "umull %[b1].4s, v5.4h, v7.4h               \n\t"
-        "uzp2  %[a1].8h, %[a1].8h, %[b1].8h         \n\t"
-        :[a0]"+w"(a.vect_u16[0]), [a1]"+w"(a.vect_u16[1]), [b0]"+w"(b.vect_u16[0]), [b1]"+w"(b.vect_u16[1])
-        :
-        :"v4", "v5", "v6", "v7"
-    );
-    return a;
+    uint16x4_t a0_lo = vget_low_u16(a.vect_u16[0]);
+    uint16x4_t a0_hi = vget_high_u16(a.vect_u16[0]);
+    uint16x4_t b0_lo = vget_low_u16(b.vect_u16[0]);
+    uint16x4_t b0_hi = vget_high_u16(b.vect_u16[0]);
+
+    uint16x4_t a1_lo = vget_low_u16(a.vect_u16[1]);
+    uint16x4_t a1_hi = vget_high_u16(a.vect_u16[1]);
+    uint16x4_t b1_lo = vget_low_u16(b.vect_u16[1]);
+    uint16x4_t b1_hi = vget_high_u16(b.vect_u16[1]);
+
+    uint32x4_t r0_lo = vmull_u16(a0_lo, b0_lo);
+    uint32x4_t r0_hi = vmull_u16(a0_hi, b0_hi);
+    uint32x4_t r1_lo = vmull_u16(a1_lo, b1_lo);
+    uint32x4_t r1_hi = vmull_u16(a1_hi, b1_hi);
+
+    uint16x4_t hi0_lo = vshrn_n_u32(r0_lo, 16);
+    uint16x4_t hi0_hi = vshrn_n_u32(r0_hi, 16);
+    uint16x4_t hi1_lo = vshrn_n_u32(r1_lo, 16);
+    uint16x4_t hi1_hi = vshrn_n_u32(r1_hi, 16);
+
+    __m256i result;
+    result.vect_u16[0] = vcombine_u16(hi0_lo, hi0_hi);
+    result.vect_u16[1] = vcombine_u16(hi1_lo, hi1_hi);
+    return result;
 }
 
 FORCE_INLINE __m256i _mm256_mulhi_epi32(__m256i a, __m256i b)
 {
-    __asm__ __volatile__ (
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__(
         "mov v4.d[0], %[a0].d[1]                    \n\t"
         "mov v5.d[0], %[a1].d[1]                    \n\t"
         "smull %[a0].2d, %[a0].2s, %[b0].2s         \n\t"
@@ -568,16 +710,54 @@ FORCE_INLINE __m256i _mm256_mulhi_epi32(__m256i a, __m256i b)
         "smull %[a1].2d, %[a1].2s, %[b1].2s         \n\t"
         "smull %[b1].2d, v5.2s, v7.2s               \n\t"
         "uzp2  %[a1].4s, %[a1].4s, %[b1].4s         \n\t"
-        :[a0]"+w"(a.vect_s32[0]), [a1]"+w"(a.vect_s32[1]), [b0]"+w"(b.vect_s32[0]), [b1]"+w"(b.vect_s32[1])
+        : [a0] "+w"(a.vect_s32[0]), [a1] "+w"(a.vect_s32[1]), [b0] "+w"(b.vect_s32[0]), [b1] "+w"(b.vect_s32[1])
         :
-        :"v4", "v5", "v6", "v7"
-    );
+        : "v4", "v5", "v6", "v7");
     return a;
+#endif
+#if defined(_MSC_VER) && !defined(__clang__)
+    // Construct vectors for even and odd indices
+    int32x2_t a0_lo =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[0], 2) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[0], 0));
+    int32x2_t a0_hi =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[0], 3) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[0], 1));
+    int32x2_t a1_lo =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[1], 2) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[1], 0));
+    int32x2_t a1_hi =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[1], 3) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[1], 1));
+
+    int32x2_t b0_lo =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[0], 2) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[0], 0));
+    int32x2_t b0_hi =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[0], 3) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[0], 1));
+    int32x2_t b1_lo =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[1], 2) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[1], 0));
+    int32x2_t b1_hi =
+        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[1], 3) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[1], 1));
+
+    // Multiply
+    int64x2_t r0_lo = vmull_s32(a0_lo, b0_lo);
+    int64x2_t r0_hi = vmull_s32(a0_hi, b0_hi);
+    int64x2_t r1_lo = vmull_s32(a1_lo, b1_lo);
+    int64x2_t r1_hi = vmull_s32(a1_hi, b1_hi);
+
+    // Extract high 32 bits
+    int32x2_t hi0_lo = vshrn_n_s64(r0_lo, 32);
+    int32x2_t hi0_hi = vshrn_n_s64(r0_hi, 32);
+    int32x2_t hi1_lo = vshrn_n_s64(r1_lo, 32);
+    int32x2_t hi1_hi = vshrn_n_s64(r1_hi, 32);
+
+    // Combine results
+    __m256i result;
+    result.vect_s32[0] = vcombine_s32(hi0_lo, hi0_hi);
+    result.vect_s32[1] = vcombine_s32(hi1_lo, hi1_hi);
+    return result;
+#endif
 }
 
-FORCE_INLINE __m256i _mm256_mulhi_epu32(__m256i a, __m256i b)
-{
-    __asm__ __volatile__ (
+FORCE_INLINE __m256i _mm256_mulhi_epu32(__m256i a, __m256i b) {
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__(
         "mov v4.d[0], %[a0].d[1]                    \n\t"
         "mov v5.d[0], %[a1].d[1]                    \n\t"
         "umull %[a0].2d, %[a0].2s, %[b0].2s         \n\t"
@@ -588,11 +768,34 @@ FORCE_INLINE __m256i _mm256_mulhi_epu32(__m256i a, __m256i b)
         "umull %[a1].2d, %[a1].2s, %[b1].2s         \n\t"
         "umull %[b1].2d, v5.2s, v7.2s               \n\t"
         "uzp2  %[a1].4s, %[a1].4s, %[b1].4s         \n\t"
-        :[a0]"+w"(a.vect_s32[0]), [a1]"+w"(a.vect_s32[1]), [b0]"+w"(b.vect_s32[0]), [b1]"+w"(b.vect_s32[1])
+        : [a0] "+w"(a.vect_s32[0]), [a1] "+w"(a.vect_s32[1]), [b0] "+w"(b.vect_s32[0]), [b1] "+w"(b.vect_s32[1])
         :
-        :"v4", "v5", "v6", "v7"
-    );
+        : "v4", "v5", "v6", "v7");
     return a;
+#endif
+#if defined(_MSC_VER) && !defined(__clang__)
+    // For each 128-bit half
+    uint32x4_t a0 = a.vect_u32[0], a1 = a.vect_u32[1];
+    uint32x4_t b0 = b.vect_u32[0], b1 = b.vect_u32[1];
+
+    // Multiply to get 64-bit results
+    uint64x2_t r0_lo = vmull_u32(vget_low_u32(a0), vget_low_u32(b0));
+    uint64x2_t r0_hi = vmull_u32(vget_high_u32(a0), vget_high_u32(b0));
+    uint64x2_t r1_lo = vmull_u32(vget_low_u32(a1), vget_low_u32(b1));
+    uint64x2_t r1_hi = vmull_u32(vget_high_u32(a1), vget_high_u32(b1));
+
+    // Extract high 32 bits
+    uint32x2_t hi0_lo = vshrn_n_u64(r0_lo, 32);
+    uint32x2_t hi0_hi = vshrn_n_u64(r0_hi, 32);
+    uint32x2_t hi1_lo = vshrn_n_u64(r1_lo, 32);
+    uint32x2_t hi1_hi = vshrn_n_u64(r1_hi, 32);
+
+    // Combine into 128-bit vectors
+    __m256i result;
+    result.vect_u32[0] = vcombine_u32(hi0_lo, hi0_hi);
+    result.vect_u32[1] = vcombine_u32(hi1_lo, hi1_hi);
+    return result;
+#endif
 }
 
 FORCE_INLINE __m256i _mm256_mullo_epi16(__m256i a, __m256i b)
@@ -656,7 +859,7 @@ FORCE_INLINE void _mm256_zeroupper(void)
     res.vect_s32[1] = vshlq_n_s32(a.vect_s32[1], c);
 FORCE_INLINE __m256i _mm256_sll_epi32(__m256i a, __m128i count)
 {
-    long long c = count.vect_s64[0];
+    long long c = GET_LANE_S64_FROM128(count, 0);
     __m256i result_m256i;
     if (likely(c >= 0 && c < 32)) {
         switch (c)
@@ -771,7 +974,7 @@ FORCE_INLINE __m256i _mm256_sll_epi32(__m256i a, __m128i count)
     res.vect_s64[1] = vshlq_n_s64(a.vect_s64[1], c);
 FORCE_INLINE __m256i _mm256_sll_epi64(__m256i a, __m128i count)
 {
-    long long c = count.vect_s64[0];
+    long long c = GET_LANE_S64_FROM128(count, 0);
     __m256i result_m256i;
     if (likely(c >= 0 && c < 64)) {
         switch (c)
@@ -1491,32 +1694,92 @@ FORCE_INLINE __m256i _mm256_xor_si256(__m256i a, __m256i b)
     return res_m256i;
 }
 
-FORCE_INLINE __m256 _mm256_or_ps (__m256 a, __m256 b)
+FORCE_INLINE __m256 _mm256_or_ps(__m256 a, __m256 b)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    uint32x4_t a0 = vreinterpretq_u32_f32(a.vect_f32[0]);
+    uint32x4_t a1 = vreinterpretq_u32_f32(a.vect_f32[1]);
+    uint32x4_t b0 = vreinterpretq_u32_f32(b.vect_f32[0]);
+    uint32x4_t b1 = vreinterpretq_u32_f32(b.vect_f32[1]);
+
+    uint32x4_t r0 = vorrq_u32(a0, b0);
+    uint32x4_t r1 = vorrq_u32(a1, b1);
+
+    __m256 result;
+    result.vect_f32[0] = vreinterpretq_f32_u32(r0);
+    result.vect_f32[1] = vreinterpretq_f32_u32(r1);
+    return result;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile(
         "orr %0.16b, %0.16b, %2.16b     \n\t"
         "orr %1.16b, %1.16b, %3.16b     \n\t"
-        :"+w"(a.vect_f32[0]), "+w"(a.vect_f32[1])
-        :"w"(b.vect_f32[0]), "w"(b.vect_f32[1])
-    );
+        : "+w"(a.vect_f32[0]), "+w"(a.vect_f32[1])
+        : "w"(b.vect_f32[0]), "w"(b.vect_f32[1]));
     return a;
+#endif
 }
 
 FORCE_INLINE __m256d _mm256_or_pd (__m256d a, __m256d b)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    // Reinterpret float64x2_t as uint64x2_t for bitwise OR
+    uint64x2_t a0 = vreinterpretq_u64_f64(a.vect_f64[0]);
+    uint64x2_t a1 = vreinterpretq_u64_f64(a.vect_f64[1]);
+    uint64x2_t b0 = vreinterpretq_u64_f64(b.vect_f64[0]);
+    uint64x2_t b1 = vreinterpretq_u64_f64(b.vect_f64[1]);
+
+    // Perform bitwise OR
+    uint64x2_t r0 = vorrq_u64(a0, b0);
+    uint64x2_t r1 = vorrq_u64(a1, b1);
+
+    // Reinterpret back to float64x2_t
+    __m256d result;
+    result.vect_f64[0] = vreinterpretq_f64_u64(r0);
+    result.vect_f64[1] = vreinterpretq_f64_u64(r1);
+    return result;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile(
         "orr %0.16b, %0.16b, %2.16b     \n\t"
         "orr %1.16b, %1.16b, %3.16b     \n\t"
-        :"+w"(a.vect_f64[0]), "+w"(a.vect_f64[1])
-        :"w"(b.vect_f64[0]), "w"(b.vect_f64[1])
-    );
+        : "+w"(a.vect_f64[0]), "+w"(a.vect_f64[1])
+        : "w"(b.vect_f64[0]), "w"(b.vect_f64[1]));
     return a;
+#endif
 }
 
 FORCE_INLINE int _mm256_movemask_epi8 (__m256i a)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    // Shift each byte right by 7 to isolate the MSB
+    uint8x16_t a0 = vshrq_n_u8(a.vect_u8[0], 7);
+    uint8x16_t a1 = vshrq_n_u8(a.vect_u8[1], 7);
+
+    // Define powers of 2 for each byte position
+    static const uint8_t powers_data[16] = {1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128};
+    uint8x16_t powers = vld1q_u8(powers_data);
+
+    // Apply mask to extract weighted bits
+    uint8x16_t masked0 = vandq_u8(a0, powers);
+    uint8x16_t masked1 = vandq_u8(a1, powers);
+
+    // Sum bits using pairwise additions
+    uint16x8_t sum0_u16 = vpaddlq_u8(masked0);
+    uint16x8_t sum1_u16 = vpaddlq_u8(masked1);
+    uint32x4_t sum0_u32 = vpaddlq_u16(sum0_u16);
+    uint32x4_t sum1_u32 = vpaddlq_u16(sum1_u16);
+    uint64x2_t sum0_u64 = vpaddlq_u32(sum0_u32);
+    uint64x2_t sum1_u64 = vpaddlq_u32(sum1_u32);
+
+    // Extract final mask bits
+    int mask = (int)vgetq_lane_u64(sum0_u64, 0) | ((int)vgetq_lane_u64(sum1_u64, 0) << 16);
+    return mask;
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
     int res;
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         "ushr %[a0].16b, %[a0].16b, #7          \n\t"
         "ushr %[a1].16b, %[a1].16b, #7          \n\t"
         "usra %[a0].8h, %[a0].8h, #7            \n\t"
@@ -1529,11 +1792,11 @@ FORCE_INLINE int _mm256_movemask_epi8 (__m256i a)
         "ins %[a0].b[2], %[a1].b[0]             \n\t"
         "ins %[a0].b[3], %[a1].b[8]             \n\t"
         "umov %w[r], %[a0].s[0]"
-        :[r]"=r"(res), [a0]"+w"(a.vect_u8[0]), [a1]"+w"(a.vect_u8[1])
+        : [r] "=r"(res), [a0] "+w"(a.vect_u8[0]), [a1] "+w"(a.vect_u8[1])
         :
-        :
-    );
+        :);
     return res;
+#endif
 }
 
 FORCE_INLINE int _mm256_movemask_ps(__m256 a)
@@ -1574,14 +1837,68 @@ FORCE_INLINE __m128i _mm256_extracti128_si256(__m256i a, const int imm8)
 
 FORCE_INLINE __int32 _mm256_extract_epi32 (__m256i a, const int index)
 {
+#if defined(__GNUC__) || defined(__clang__)
     assert(index >= 0 && index <= 7);
     return a.vect_s32[!!(index & 0x04)][index & 0x03];
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+    assert(index >= 0 && index <= 7);
+    const unsigned char idx = index >> 2;
+    const unsigned char lane = index & 0x3;
+    if (idx == 0) {
+        switch (lane) {
+            case 0:
+                return vgetq_lane_s32(a.vect_s32[0], 0);
+            case 1:
+                return vgetq_lane_s32(a.vect_s32[0], 1);
+            case 2:
+                return vgetq_lane_s32(a.vect_s32[0], 2);
+            case 3:
+                return vgetq_lane_s32(a.vect_s32[0], 3);
+        }
+    }
+    if (idx == 1) {
+        switch (lane) {
+            case 0:
+                return vgetq_lane_s32(a.vect_s32[1], 0);
+            case 1:
+                return vgetq_lane_s32(a.vect_s32[1], 1);
+            case 2:
+                return vgetq_lane_s32(a.vect_s32[1], 2);
+            case 3:
+                return vgetq_lane_s32(a.vect_s32[1], 3);
+        }
+    }
+#endif
 }
 
 FORCE_INLINE __int64 _mm256_extract_epi64 (__m256i a, const int index)
 {
+#if defined(__GNUC__) || defined(__clang__)
     assert(index >= 0 && index <= 3);
     return a.vect_s64[!!(index & 0x02)][index & 0x01];
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+    assert(index >= 0 && index <= 3);
+    const unsigned char idx = index >> 1;
+    const unsigned char lane = index & 0x1;
+    if (idx == 0) {
+        if (lane == 0) {
+            return vgetq_lane_s64(a.vect_s64[0], 0);
+        } else {
+            return vgetq_lane_s64(a.vect_s64[0], 1);
+        }
+    }
+    if (idx == 1) {
+        if (lane == 0) {
+            return vgetq_lane_s64(a.vect_s64[1], 0);
+        } else {
+            return vgetq_lane_s64(a.vect_s64[1], 1);
+        }
+    }
+#endif
 }
 
 FORCE_INLINE __m128 _mm256_extractf128_ps (__m256 a, const int imm8)
@@ -1764,15 +2081,22 @@ FORCE_INLINE __m256i _mm256_maskload_epi32(int const* mem_addr, __m256i mask)
 
 FORCE_INLINE __m256i _mm256_broadcastq_epi64(__m128i a)
 {
+#if defined(__GNUC__) || defined(__clang__)
     __m256i res;
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         "dup %[r0].2d, %[a].d[0]           \n\t"
         "dup %[r1].2d, %[a].d[0]           \n\t"
-        :[r0]"=w"(res.vect_s64[0]), [r1]"=w"(res.vect_s64[1])
-        :[a]"w"(a.vect_s64)
-        :
-    );
+        : [r0] "=w"(res.vect_s64[0]), [r1] "=w"(res.vect_s64[1])
+        : [a] "w"(a.vect_s64)
+        :);
     return res;
+#endif
+#if defined(_MSC_VER) && !defined(__clang__)
+    __m256i res;
+    res.vect_s64[0] = vdupq_n_s64(vgetq_lane_s64(a.vect_s64, 0));
+    res.vect_s64[1] = vdupq_n_s64(vgetq_lane_s64(a.vect_s64, 0));
+    return res;
+#endif
 }
 
 FORCE_INLINE __m256i _mm256_broadcastsi128_si256(__m128i a)
@@ -1835,17 +2159,36 @@ FORCE_INLINE __m128i _mm256_castsi256_si128(__m256i a)
 
 FORCE_INLINE __m256d _mm256_cvtepi32_pd(__m128i a)
 {
+#if defined(__GNUC__) || defined(__clang__)
     __m256d res;
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         "scvtf v0.4s, %[a].4s           \n\t"
         "fcvtl %[r0].2d, v0.2s          \n\t"
         "mov v1.d[0], v0.d[1]           \n\t"
         "fcvtl %[r1].2d, v1.2s          \n\t"
-        :[r0]"=w"(res.vect_f64[0]), [r1]"=w"(res.vect_f64[1])
-        :[a]"w"(a.vect_s32)
-        :"v0", "v1"
-    );
+        : [r0] "=w"(res.vect_f64[0]), [r1] "=w"(res.vect_f64[1])
+        : [a] "w"(a.vect_s32)
+        : "v0", "v1");
     return res;
+#endif
+#if defined(_MSC_VER) && !defined(__clang__)
+    // Extract 32-bit integers from __m128i
+    int32x4_t src = a.vect_s32;
+
+    // Convert lower two lanes to float32
+    float32x2_t f32_lo = vcvt_f32_s32(vget_low_s32(src));
+    float32x2_t f32_hi = vcvt_f32_s32(vget_high_s32(src));
+
+    // Widen to float64
+    float64x2_t f64_lo = vcvt_f64_f32(f32_lo);
+    float64x2_t f64_hi = vcvt_f64_f32(f32_hi);
+
+    // Pack into __m256d
+    __m256d result;
+    result.vect_f64[0] = f64_lo;
+    result.vect_f64[1] = f64_hi;
+    return result;
+#endif
 }
 
 FORCE_INLINE __m256 _mm256_cvtepi32_ps(__m256i a)
@@ -1938,8 +2281,8 @@ FORCE_INLINE __m256d _mm256_blendv_pd(__m256d a, __m256d b, __m256d mask)
 {
     __m256d result_m256d;
     uint64x2_t vect_flag[2];
-    vect_flag[0] = vcgeq_s64((int64x2_t)mask.vect_f64[0], vdupq_n_s64(0));
-    vect_flag[1] = vcgeq_s64((int64x2_t)mask.vect_f64[1], vdupq_n_s64(0));
+    vect_flag[0] = vcgeq_s64(vreinterpretq_s64_f64(mask.vect_f64[0]), vdupq_n_s64(0));
+    vect_flag[1] = vcgeq_s64(vreinterpretq_s64_f64(mask.vect_f64[1]), vdupq_n_s64(0));
     result_m256d.vect_f64[0] = vbslq_f64(vect_flag[0], a.vect_f64[0], b.vect_f64[0]);
     result_m256d.vect_f64[1] = vbslq_f64(vect_flag[1], a.vect_f64[1], b.vect_f64[1]);
     return result_m256d;
@@ -1949,8 +2292,8 @@ FORCE_INLINE __m256 _mm256_blendv_ps(__m256 a, __m256 b, __m256 mask)
 {
     __m256 result_m256;
     uint32x4_t vect_flag[2];
-    vect_flag[0] = vcgeq_s32((int32x4_t)mask.vect_f32[0], vdupq_n_s32(0));
-    vect_flag[1] = vcgeq_s32((int32x4_t)mask.vect_f32[1], vdupq_n_s32(0));
+    vect_flag[0] = vcgeq_s32(mask.vect_f32[0], vdupq_n_s32(0));
+    vect_flag[1] = vcgeq_s32(mask.vect_f32[1], vdupq_n_s32(0));
     result_m256.vect_f32[0] = vbslq_f32(vect_flag[0], a.vect_f32[0], b.vect_f32[0]);
     result_m256.vect_f32[1] = vbslq_f32(vect_flag[1], a.vect_f32[1], b.vect_f32[1]);
     return result_m256;
@@ -2470,8 +2813,8 @@ FORCE_INLINE __m256d _mm256_cmp_pd(__m256d a, __m256d b, const int imm8)
 {
     assert(imm8 < 32 && imm8 >= 0);
     __m256d dst;
-    dst.vect_f64[0] = (float64x2_t)g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[0], b.vect_f64[0]);
-    dst.vect_f64[1] = (float64x2_t)g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[1], b.vect_f64[1]);
+    dst.vect_f64[0] = vreinterpretq_f64_u64(g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[0], b.vect_f64[0]));
+    dst.vect_f64[1] = vreinterpretq_f64_u64(g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[1], b.vect_f64[1]));
     return dst;
 }
 

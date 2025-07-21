@@ -81,12 +81,16 @@ FORCE_INLINE __m128i _mm_sha256rnds2_epu32(__m128i a, __m128i b, __m128i k)
 
 FORCE_INLINE __m128i _mm_sha256msg1_epu32(__m128i a, __m128i b)
 {
-    __asm__ __volatile__(
-        "sha256su0 %[dst].4S, %[src].4S  \n\t"
-        : [dst] "+w" (a)
-        : [src] "w" (b)
-    );
+#if defined(_MSC_VER) && !defined(__clang__)
+
+    __m128i result;
+    result.vect_u32 = vsha256su0q_u32(a.vect_u32, b.vect_u32);
+    return result;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("sha256su0 %[dst].4S, %[src].4S  \n\t" : [dst] "+w"(a) : [src] "w"(b));
     return a;
+#endif
 }
 
 FORCE_INLINE __m128i _mm_sha256msg2_epu32(__m128i a, __m128i b)

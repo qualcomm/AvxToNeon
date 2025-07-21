@@ -29,6 +29,22 @@ using namespace std;
 
 #include "typedefs.h"
 
+#if defined(_MSC_VER) && !defined(__clang__)
+typedef ALIGN_STRUCT(64) union {
+    int8x16_t vect_s8[4];
+    int16x8_t vect_s16[4];
+    int32x4_t vect_s32[4];
+    int64x2_t vect_s64[4];
+    uint8x16_t vect_u8[4];
+    uint16x8_t vect_u16[4];
+    uint32x4_t vect_u32[4];
+    uint64x2_t vect_u64[4];
+    __m256i vect_i256[2];
+    __m128i vect_i128[4];
+} __m512i;
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
 typedef union {
     int8x16_t vect_s8[4];
     int16x8_t vect_s16[4];
@@ -40,7 +56,8 @@ typedef union {
     uint64x2_t vect_u64[4];
     __m256i vect_i256[2];
     __m128i vect_i128[4];
-} __m512i __attribute__((aligned(64)));
+} __m512i ALIGN_STRUCT(64);
+#endif
 
 typedef struct {
     float32x4_t vect_f32[4];
@@ -819,7 +836,24 @@ FORCE_INLINE __mmask8 _mm512_test_epi64_mask(__m512i a, __m512i b)
 
 FORCE_INLINE __m512i _mm512_mul_epi32(__m512i a, __m512i b)
 {
-    __asm__ __volatile__ (
+#if defined(_MSC_VER) && !defined(__clang__)
+    __m512i result;
+
+    for (int i = 0; i < 4; ++i) {
+        // Extract even lanes: lane 0 and 2
+        int32x2_t a_even = vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[i], 2) << 32) |
+                                       (uint32_t)vgetq_lane_s32(a.vect_s32[i], 0));
+        int32x2_t b_even = vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[i], 2) << 32) |
+                                       (uint32_t)vgetq_lane_s32(b.vect_s32[i], 0));
+
+        // Multiply to get 64-bit results
+        result.vect_s64[i] = vmull_s32(a_even, b_even);
+    }
+
+    return result;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__(
         "ins %[a0].s[1], %[a0].s[2]             \n\t"
         "ins %[a1].s[1], %[a1].s[2]             \n\t"
         "ins %[a2].s[1], %[a2].s[2]             \n\t"
@@ -832,17 +866,37 @@ FORCE_INLINE __m512i _mm512_mul_epi32(__m512i a, __m512i b)
         "smull %[a1].2d, %[a1].2s, %[b1].2s     \n\t"
         "smull %[a2].2d, %[a2].2s, %[b2].2s     \n\t"
         "smull %[a3].2d, %[a3].2s, %[b3].2s     \n\t"
-        :[a0]"+w"(a.vect_s32[0]), [a1]"+w"(a.vect_s32[1]), [a2]"+w"(a.vect_s32[2]), [a3]"+w"(a.vect_s32[3]), 
-         [b0]"+w"(b.vect_s32[0]), [b1]"+w"(b.vect_s32[1]), [b2]"+w"(b.vect_s32[2]), [b3]"+w"(b.vect_s32[3])
+        : [a0] "+w"(a.vect_s32[0]), [a1] "+w"(a.vect_s32[1]), [a2] "+w"(a.vect_s32[2]), [a3] "+w"(a.vect_s32[3]),
+          [b0] "+w"(b.vect_s32[0]), [b1] "+w"(b.vect_s32[1]), [b2] "+w"(b.vect_s32[2]), [b3] "+w"(b.vect_s32[3])
         :
-        :
-    );
+        :);
     return a;
+#endif
 }
 
 FORCE_INLINE __m512i _mm512_mul_epu32(__m512i a, __m512i b)
 {
-    __asm__ __volatile__ (
+#if defined(_MSC_VER) && !defined(__clang__)
+    __m512i result;
+
+    for (int i = 0; i < 4; ++i) {
+        // Extract even lanes: lane 0 and lane 2
+        uint32_t a_lo = vgetq_lane_u32(a.vect_u32[i], 0);
+        uint32_t a_hi = vgetq_lane_u32(a.vect_u32[i], 2);
+        uint32_t b_lo = vgetq_lane_u32(b.vect_u32[i], 0);
+        uint32_t b_hi = vgetq_lane_u32(b.vect_u32[i], 2);
+
+        // Pack into uint32x2_t using vcreate_u32
+        uint32x2_t a_even = vcreate_u32(((uint64_t)a_hi << 32) | a_lo);
+        uint32x2_t b_even = vcreate_u32(((uint64_t)b_hi << 32) | b_lo);
+
+        // Multiply to get 64-bit result
+        result.vect_u64[i] = vmull_u32(a_even, b_even);
+    }
+    return result;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__(
         "ins %[a0].s[1], %[a0].s[2]             \n\t"
         "ins %[a1].s[1], %[a1].s[2]             \n\t"
         "ins %[a2].s[1], %[a2].s[2]             \n\t"
@@ -855,12 +909,12 @@ FORCE_INLINE __m512i _mm512_mul_epu32(__m512i a, __m512i b)
         "umull %[a1].2d, %[a1].2s, %[b1].2s     \n\t"
         "umull %[a2].2d, %[a2].2s, %[b2].2s     \n\t"
         "umull %[a3].2d, %[a3].2s, %[b3].2s     \n\t"
-        :[a0]"+w"(a.vect_u32[0]), [a1]"+w"(a.vect_u32[1]), [a2]"+w"(a.vect_u32[2]), [a3]"+w"(a.vect_u32[3]), 
-         [b0]"+w"(b.vect_u32[0]), [b1]"+w"(b.vect_u32[1]), [b2]"+w"(b.vect_u32[2]), [b3]"+w"(b.vect_u32[3])
+        : [a0] "+w"(a.vect_u32[0]), [a1] "+w"(a.vect_u32[1]), [a2] "+w"(a.vect_u32[2]), [a3] "+w"(a.vect_u32[3]),
+          [b0] "+w"(b.vect_u32[0]), [b1] "+w"(b.vect_u32[1]), [b2] "+w"(b.vect_u32[2]), [b3] "+w"(b.vect_u32[3])
         :
-        :
-    );
+        :);
     return a;
+#endif
 }
 
 FORCE_INLINE __m512d _mm512_mul_pd(__m512d a, __m512d b)
@@ -998,7 +1052,7 @@ FORCE_INLINE __m512 _mm512_mul_round_ps(__m512 a, __m512 b, int rounding)
     res.vect_s64[3] = vshlq_n_s64(a.vect_s64[3], c);
 FORCE_INLINE __m512i _mm512_sll_epi64(__m512i a, __m128i count)
 {
-    int c = count.vect_s64[0];
+    int c = GET_LANE_S64_FROM128(count, 0);
     __m512i result_m512i;
     result_m512i.vect_s64[0] = vdupq_n_s64(0);
     result_m512i.vect_s64[1] = vdupq_n_s64(0);
@@ -1631,22 +1685,58 @@ FORCE_INLINE __m512d _mm512_cmp_pd(__m512d a, __m512d b, const int imm8)
 {
     assert(imm8 < 32 && imm8 >= 0);
     __m512d dst;
-    dst.vect_f64[0] = (float64x2_t)g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[0], b.vect_f64[0]);
-    dst.vect_f64[1] = (float64x2_t)g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[1], b.vect_f64[1]);
-    dst.vect_f64[2] = (float64x2_t)g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[2], b.vect_f64[2]);
-    dst.vect_f64[3] = (float64x2_t)g_FunListCmp256Pd[imm8].cmpFun(a.vect_f64[3], b.vect_f64[3]);
+    dst.vect_f64[0] = vreinterpretq_f64_u64(
+        g_FunListCmp256Pd[imm8].cmpFun(vreinterpretq_u64_f64(a.vect_f64[0]), vreinterpretq_u64_f64(b.vect_f64[0])));
+    dst.vect_f64[1] = vreinterpretq_f64_u64(
+        g_FunListCmp256Pd[imm8].cmpFun(vreinterpretq_u64_f64(a.vect_f64[1]), vreinterpretq_u64_f64(b.vect_f64[1])));
+    dst.vect_f64[2] = vreinterpretq_f64_u64(
+        g_FunListCmp256Pd[imm8].cmpFun(vreinterpretq_u64_f64(a.vect_f64[2]), vreinterpretq_u64_f64(b.vect_f64[2])));
+    dst.vect_f64[3] = vreinterpretq_f64_u64(
+        g_FunListCmp256Pd[imm8].cmpFun(vreinterpretq_u64_f64(a.vect_f64[3]), vreinterpretq_u64_f64(b.vect_f64[3])));
     return dst;
 }
 
 FORCE_INLINE __mmask8 _mm512_cmp_pd_mask(__m512d a, __m512d b, const int imm8)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    assert(imm8 >= 0 && imm8 < 32);
+    uint64x2_t cmp[4];
+    for (int i = 0; i < 4; ++i) {
+        switch (imm8) {
+            case 0: // Equal
+                cmp[i] = vreinterpretq_u64_u32(vceqq_f64(a.vect_f64[i], b.vect_f64[i]));
+                break;
+            case 1: // Less than
+                cmp[i] = vreinterpretq_u64_u32(vcltq_f64(a.vect_f64[i], b.vect_f64[i]));
+                break;
+            case 2: // Greater than
+                cmp[i] = vreinterpretq_u64_u32(vcgtq_f64(a.vect_f64[i], b.vect_f64[i]));
+                break;
+            default:
+                // Unsupported mode
+                cmp[i] = vdupq_n_u64(0);
+                break;
+        }
+    }
+
+    // Extract MSB of each 64-bit lane to form mask
+    __mmask8 mask = 0;
+    for (int i = 0; i < 4; ++i) {
+        mask |= ((vgetq_lane_u64(cmp[i], 0) >> 63) << (i * 2));
+        mask |= ((vgetq_lane_u64(cmp[i], 1) >> 63) << (i * 2 + 1));
+    }
+
+    return mask;
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
     assert(imm8 < 32 && imm8 >= 0);
     __m512d dst = _mm512_cmp_pd(a, b, imm8);
     __mmask8 res = 0;
     uint64x2_t vect_mask = vld1q_u64(g_mask_epi64);
     __m512i tmp = _mm512_setzero_si512();
     uint64_t r[4];
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         "and %[t0].16b, %[d0].16b, %[mask].16b        \n\t"
         "and %[t1].16b, %[d1].16b, %[mask].16b        \n\t"
         "and %[t2].16b, %[d2].16b, %[mask].16b        \n\t"
@@ -1655,13 +1745,13 @@ FORCE_INLINE __mmask8 _mm512_cmp_pd_mask(__m512d a, __m512d b, const int imm8)
         "addp %d[r1], %[t1].2d                        \n\t"
         "addp %d[r2], %[t2].2d                        \n\t"
         "addp %d[r3], %[t3].2d                        \n\t"
-        :[t0]"+w"(tmp.vect_u64[0]), [t1]"+w"(tmp.vect_u64[1]), [t2]"+w"(tmp.vect_u64[2]), [t3]"+w"(tmp.vect_u64[3]), 
-         [r0]"=w"(r[0]), [r1]"=w"(r[1]), [r2]"=w"(r[2]), [r3]"=w"(r[3])
-        :[d0]"w"(dst.vect_f64[0]), [d1]"w"(dst.vect_f64[1]), [d2]"w"(dst.vect_f64[2]), [d3]"w"(dst.vect_f64[3]), 
-         [mask]"w"(vect_mask)
-    );
+        : [t0] "+w"(tmp.vect_u64[0]), [t1] "+w"(tmp.vect_u64[1]), [t2] "+w"(tmp.vect_u64[2]),
+          [t3] "+w"(tmp.vect_u64[3]), [r0] "=w"(r[0]), [r1] "=w"(r[1]), [r2] "=w"(r[2]), [r3] "=w"(r[3])
+        : [d0] "w"(dst.vect_f64[0]), [d1] "w"(dst.vect_f64[1]), [d2] "w"(dst.vect_f64[2]), [d3] "w"(dst.vect_f64[3]),
+          [mask] "w"(vect_mask));
     res = r[0] | (r[1] << 2) | (r[2] << 4) | (r[3] << 6);
     return res;
+#endif
 }
 
 FORCE_INLINE __m512 _mm512_cmp_ps(__m512 a, __m512 b, const int imm8)
@@ -1962,36 +2052,70 @@ FORCE_INLINE __m512i _mm512_or_epi64 (__m512i a, __m512i b)
 
 FORCE_INLINE __m512 _mm512_xor_ps (__m512 a, __m512 b)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    __m512 result;
+
+    for (int i = 0; i < 4; ++i) {
+        // Reinterpret float32x4_t as uint32x4_t
+        uint32x4_t ua = vreinterpretq_u32_f32(a.vect_f32[i]);
+        uint32x4_t ub = vreinterpretq_u32_f32(b.vect_f32[i]);
+
+        // Perform bitwise XOR
+        uint32x4_t ur = veorq_u32(ua, ub);
+
+        // Reinterpret back to float32x4_t
+        result.vect_f32[i] = vreinterpretq_f32_u32(ur);
+    }
+
+    return result;
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile(
         "eor %0.16b, %0.16b, %2.16b     \n\t"
         "eor %1.16b, %1.16b, %3.16b     \n\t"
-        :"+w"(a.vect_f32[0]), "+w"(a.vect_f32[1])
-        :"w"(b.vect_f32[0]), "w"(b.vect_f32[1])
-    );
+        : "+w"(a.vect_f32[0]), "+w"(a.vect_f32[1])
+        : "w"(b.vect_f32[0]), "w"(b.vect_f32[1]));
     __asm__ __volatile(
         "eor %0.16b, %0.16b, %2.16b     \n\t"
         "eor %1.16b, %1.16b, %3.16b     \n\t"
-        :"+w"(a.vect_f32[2]), "+w"(a.vect_f32[3])
-        :"w"(b.vect_f32[2]), "w"(b.vect_f32[3])
-    );
+        : "+w"(a.vect_f32[2]), "+w"(a.vect_f32[3])
+        : "w"(b.vect_f32[2]), "w"(b.vect_f32[3]));
     return a;
+#endif
 }
 
 FORCE_INLINE __m512d _mm512_xor_pd (__m512d a, __m512d b)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    __m512d result;
+    for (int i = 0; i < 4; ++i) {
+        // Reinterpret float64x2_t as uint64x2_t
+        uint64x2_t ua = vreinterpretq_u64_f64(a.vect_f64[i]);
+        uint64x2_t ub = vreinterpretq_u64_f64(b.vect_f64[i]);
+
+        // Perform bitwise XOR
+        uint64x2_t ur = veorq_u64(ua, ub);
+
+        // Reinterpret back to float64x2_t
+        result.vect_f64[i] = vreinterpretq_f64_u64(ur);
+    }
+    return result;
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile(
         "eor %0.16b, %0.16b, %2.16b     \n\t"
         "eor %1.16b, %1.16b, %3.16b     \n\t"
-        :"+w"(a.vect_f64[0]), "+w"(a.vect_f64[1])
-        :"w"(b.vect_f64[0]), "w"(b.vect_f64[1])
-    );
+        : "+w"(a.vect_f64[0]), "+w"(a.vect_f64[1])
+        : "w"(b.vect_f64[0]), "w"(b.vect_f64[1]));
     __asm__ __volatile(
         "eor %0.16b, %0.16b, %2.16b     \n\t"
         "eor %1.16b, %1.16b, %3.16b     \n\t"
-        :"+w"(a.vect_f64[2]), "+w"(a.vect_f64[3])
-        :"w"(b.vect_f64[2]), "w"(b.vect_f64[3])
-    );
+        : "+w"(a.vect_f64[2]), "+w"(a.vect_f64[3])
+        : "w"(b.vect_f64[2]), "w"(b.vect_f64[3]));
     return a;
+#endif
 }
 
 FORCE_INLINE __m512i _mm512_set_epi32(int e15, int e14, int e13, int e12, int e11, int e10, int e9, int e8, int e7,
@@ -2397,8 +2521,31 @@ FORCE_INLINE __m512 _mm512_cvtepi32_ps (__m512i a)
 
 FORCE_INLINE __m512d _mm512_cvtepi32_pd (__m256i a)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
     __m512d res;
-    __asm__ __volatile__ (
+
+    for (int i = 0; i < 2; ++i) {
+        // Extract 4 int32 lanes from each vect_s32[i]
+        int32x4_t src = a.vect_s32[i];
+
+        // Split into low and high halves
+        int32x2_t lo = vget_low_s32(src);
+        int32x2_t hi = vget_high_s32(src);
+
+        // Convert to float32
+        float32x2_t f32_lo = vcvt_f32_s32(lo);
+        float32x2_t f32_hi = vcvt_f32_s32(hi);
+
+        // Widen to float64
+        res.vect_f64[i * 2 + 0] = vcvt_f64_f32(f32_lo);
+        res.vect_f64[i * 2 + 1] = vcvt_f64_f32(f32_hi);
+    }
+    return res;
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+    __m512d res;
+    __asm__ __volatile__(
         "scvtf v0.4s, %[a0].4s           \n\t"
         "scvtf v1.4s, %[a1].4s           \n\t"
         "fcvtl %[r0].2d, v0.2s           \n\t"
@@ -2407,11 +2554,11 @@ FORCE_INLINE __m512d _mm512_cvtepi32_pd (__m256i a)
         "mov v1.d[0], v1.d[1]            \n\t"
         "fcvtl %[r1].2d, v0.2s           \n\t"
         "fcvtl %[r3].2d, v1.2s           \n\t"
-        :[r0]"=w"(res.vect_f64[0]), [r1]"=w"(res.vect_f64[1]), [r2]"=w"(res.vect_f64[2]), [r3]"=w"(res.vect_f64[3])
-        :[a0]"w"(a.vect_s32[0]), [a1]"w"(a.vect_s32[1])
-        :"v0", "v1"
-    );
+        : [r0] "=w"(res.vect_f64[0]), [r1] "=w"(res.vect_f64[1]), [r2] "=w"(res.vect_f64[2]), [r3] "=w"(res.vect_f64[3])
+        : [a0] "w"(a.vect_s32[0]), [a1] "w"(a.vect_s32[1])
+        : "v0", "v1");
     return res;
+#endif
 }
 
 FORCE_INLINE __m512 _mm512_insertf32x8 (__m512 a, __m256 b, int imm8)

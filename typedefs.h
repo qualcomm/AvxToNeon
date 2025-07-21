@@ -23,14 +23,22 @@
 #define TYPEDEFS_H
 
 #if defined(__GNUC__) || defined(__clang__)
-
 #pragma push_macro("FORCE_INLINE")
 #pragma push_macro("ALIGN_STRUCT")
 #define FORCE_INLINE static inline __attribute__((always_inline))
 #define ALIGN_STRUCT(x) __attribute__((aligned(x)))
+#define GET_LANE_S64_FROM128(vec, index) (vec.vect_s64[(index)])
+#define GET_LANE_S32_FROM128(vec, index) (vec.vect_s32[(index)])
+
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma push_macro("FORCE_INLINE")
+#pragma push_macro("ALIGN_STRUCT")
+#define FORCE_INLINE __forceinline
+#define ALIGN_STRUCT(x) __declspec(align(x))
+#define GET_LANE_S64_FROM128(vec, index) vgetq_lane_s64((vec.vect_s64), (index))
+#define GET_LANE_S32_FROM128(vec, index) vgetq_lane_s32((vec.vect_s32), (index))
 
 #else
-
 #error "Macro name collisions may happens with unknown compiler"
 #ifdef FORCE_INLINE
 #undef FORCE_INLINE
@@ -64,6 +72,29 @@
 
 #ifndef __mmask8
 #define __mmask8 unsigned char
+#endif
+
+#ifndef __builtin_expect
+#define __builtin_expect(expr, val) (expr)
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+static FORCE_INLINE int __builtin_ctz(unsigned int x) {
+    unsigned long index;
+    if (x == 0) return 32;
+    _BitScanForward(&index, x);
+    return (int)index;
+}
+static FORCE_INLINE int __builtin_clz(unsigned int x) {
+    if (x == 0) return 32;
+    int n = 0;
+    for (unsigned int mask = 0x80000000; (x & mask) == 0; mask >>= 1) {
+        n++;
+    }
+    return n;
+}
 #endif
 
 #endif //TYPEDEFS_H

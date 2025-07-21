@@ -7,6 +7,7 @@
 
 #include "a2ntest.h"
 
+#include <arm_neon.h>
 #include <math.h>
 #include <string.h>
 
@@ -1433,10 +1434,10 @@ const char *RunTest(InstructionTest test, int *flag)
 
 int IsEqualFloat32x4(__m128 a, const float32_t *x, float epsilon)
 {
-    float e0 = fabs(vgetq_lane_f32(a, 0) - x[0]);
-    float e1 = fabs(vgetq_lane_f32(a, 1) - x[1]);
-    float e2 = fabs(vgetq_lane_f32(a, 2) - x[2]);
-    float e3 = fabs(vgetq_lane_f32(a, 3) - x[3]);
+    float e0 = fabsf(vgetq_lane_f32(a, 0) - x[0]);
+    float e1 = fabsf(vgetq_lane_f32(a, 1) - x[1]);
+    float e2 = fabsf(vgetq_lane_f32(a, 2) - x[2]);
+    float e3 = fabsf(vgetq_lane_f32(a, 3) - x[3]);
     ASSERT_RETURN(e0 < epsilon);
     ASSERT_RETURN(e1 < epsilon);
     ASSERT_RETURN(e2 < epsilon);
@@ -5421,15 +5422,20 @@ int test_mm256_cmp_ps()
     int i;
     int expect[8];
 
-    __m256 s1 = test_mm256_cmp_ps_data_model_unordered_data1;
-    __m256 s2 = test_mm256_cmp_ps_data_model_unordered_data2;
+    __m256 s1;
+    s1.vect_f32[0] = vld1q_f32(&test_mm256_cmp_ps_data.s1_unordered[0]);
+    s1.vect_f32[1] = vld1q_f32(&test_mm256_cmp_ps_data.s1_unordered[4]);
+    __m256 s2;
+    s2.vect_f32[0] = vld1q_f32(&test_mm256_cmp_ps_data.s2_unordered[0]);
+    s2.vect_f32[1] = vld1q_f32(&test_mm256_cmp_ps_data.s2_unordered[4]);
     for (int j = 0; j < 32; j++) {
         MM256_CMP_PS(j, test_mm256_cmp_ps_data_model_unordered_ret[j][i], expect);
     }
 
-    s1 = test_mm256_cmp_ps_data_model_ordered_data1;
-    s2 = test_mm256_cmp_ps_data_model_ordered_data2;
-
+    s1.vect_f32[0] = vld1q_f32(&test_mm256_cmp_ps_data.s1_ordered[0]);
+    s1.vect_f32[1] = vld1q_f32(&test_mm256_cmp_ps_data.s1_ordered[4]);
+    s2.vect_f32[0] = vld1q_f32(&test_mm256_cmp_ps_data.s2_ordered[0]);
+    s2.vect_f32[1] = vld1q_f32(&test_mm256_cmp_ps_data.s2_ordered[4]);
     for (int j = 0; j < 32; j++) {
         MM256_CMP_PS(j, test_mm256_cmp_ps_data_model_ordered_ret[j][i], expect);
     }
@@ -5923,7 +5929,7 @@ int test_mm_malloc()
 
 int test_mm_fmadd_ps()
 {
-    __m128 res = (float32x4_t){ 0.0f, 0.0f, 0.0f, 0.0f };
+    __m128 res = vdupq_n_f32(0.0f);
     __m128 a = vld1q_f32(g_test_mm_fmadd_ps_data.a);
     __m128 b = vld1q_f32(g_test_mm_fmadd_ps_data.b);
     __m128 c = vld1q_f32(g_test_mm_fmadd_ps_data.c);
@@ -5940,7 +5946,7 @@ int test_mm_fmadd_ps()
 
 int test_mm_mask_fmadd_ps()
 {
-    __m128 res = (float32x4_t){ 0.0f, 0.0f, 0.0f, 0.0f };
+    __m128 res = vdupq_n_f32(0.0f);
     __m128 a = vld1q_f32(g_test_mm_mask_fmadd_ps_data.a);
     __m128 b = vld1q_f32(g_test_mm_mask_fmadd_ps_data.b);
     __m128 c = vld1q_f32(g_test_mm_mask_fmadd_ps_data.c);

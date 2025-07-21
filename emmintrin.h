@@ -15,6 +15,7 @@
 
  */
 
+#include <stdio.h>
 #ifndef AVX2NEON_H
 #error Never use <avxintrin512.h> directly; include " avx2neon.h" instead.
 #endif
@@ -56,10 +57,10 @@ typedef enum {
     _MM_CMPINT_TRUE = 7   /* Always True */
 } _MM_CMPINT_ENUM;
 
-static uint64_t g_mask_epi64[2] __attribute__((aligned(16))) = {0x01, 0x02};
-static uint32_t g_mask_epi32[4] __attribute__((aligned(16))) = {0x01, 0x02, 0x04, 0x08};
-static uint16_t g_mask_epi16[8] __attribute__((aligned(16))) = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-static uint8_t g_mask_epi8[16] __attribute__((aligned(16))) = {
+ALIGN_STRUCT(16) static uint64_t g_mask_epi64[2] = {0x01, 0x02};
+ALIGN_STRUCT(16) static uint32_t g_mask_epi32[4] = {0x01, 0x02, 0x04, 0x08};
+ALIGN_STRUCT(16) static uint16_t g_mask_epi16[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+ALIGN_STRUCT(16) static uint8_t g_mask_epi8[16] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
 #define _SIDD_UBYTE_OPS 0x00  // unsigned 8-bit characters
@@ -208,23 +209,36 @@ static uint8_t g_mask_epi8[16] __attribute__((aligned(16))) = {
         }                                                                                                           \
     }
 
-#define SET32x4(res, e0, e1, e2, e3)                     \
-    __asm__ __volatile__ (                                  \
-        "mov %[r].s[0], %w[x]        \n\t"                  \
-        "mov %[r].s[1], %w[y]        \n\t"                  \
-        "mov %[r].s[2], %w[z]        \n\t"                  \
-        "mov %[r].s[3], %w[k]        \n\t"                  \
-        :[r]"=w"(res)                                       \
-        :[x]"r"(e0), [y]"r"(e1), [z]"r"(e2), [k]"r"(e3)     \
-    );
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SET64x2(res, e0, e1)            \
+    res = vsetq_lane_s64((e0), res, 0); \
+    res = vsetq_lane_s64((e0), res, 1);
+#define SET32x4(res, e0, e1, e2, e3) \
+    res = vsetq_lane_s32((e0), res, 0); \
+    res = vsetq_lane_s32((e1), res, 1); \
+    res = vsetq_lane_s32((e2), res, 2); \
+    res = vsetq_lane_s32((e3), res, 3);
 
-#define  SET64x2(res, e0, e1)                            \
-    __asm__ __volatile__ (                                  \
-        "mov %[r].d[0], %[x]         \n\t"                  \
-        "mov %[r].d[1], %[y]         \n\t"                  \
-        :[r]"=w"(res)                                       \
-        :[x]"r"(e0), [y]"r"(e1)                             \
-    );
+
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define SET64x2(res, e0, e1)               \
+    __asm__ __volatile__(                  \
+        "mov %[r].d[0], %[x]         \n\t" \
+        "mov %[r].d[1], %[y]         \n\t" \
+        : [r] "=w"(res)                    \
+        : [x] "r"(e0), [y] "r"(e1));
+#define SET32x4(res, e0, e1, e2, e3)       \
+    __asm__ __volatile__(                  \
+        "mov %[r].s[0], %w[x]        \n\t" \
+        "mov %[r].s[1], %w[y]        \n\t" \
+        "mov %[r].s[2], %w[z]        \n\t" \
+        "mov %[r].s[3], %w[k]        \n\t" \
+        : [r] "=w"(res)                    \
+        : [x] "r"(e0), [y] "r"(e1), [z] "r"(e2), [k] "r"(e3));
+
+#endif
 
 /* extract highest bit from every 32bit */ 
 #define PICK_HB_32x16(res, sign)                                                                             \
@@ -353,7 +367,7 @@ FORCE_INLINE __m128i _mm_div_epu16(__m128i a, __m128i b)
     res.vect_s64 = vshlq_n_s64(a.vect_s64, mc);
 FORCE_INLINE __m128i _mm_sll_epi64(__m128i a, __m128i count)
 {
-    long long c = count.vect_s64[0];
+    long long c = GET_LANE_S64_FROM128(count, 0);
     __m128i result_m128i;
     if (likely(c >= 0 && c < 64)) {
         switch (c)
@@ -565,23 +579,26 @@ FORCE_INLINE __m128i _mm_cmpeq_epi64(__m128i a, __m128i b)
     return result_m128i;
 }
 
+// set b[0] to a[0]
 FORCE_INLINE __m128 _mm_move_ss (__m128 a, __m128 b)
 {
-    __asm__ __volatile__(
-        "mov %0.s[0], %1.s[0]        \n\t"
-        :"+w"(a)
-        :"w"(b)
-    );
+#if defined(_MSC_VER) && !defined(__clang__)
+    return vsetq_lane_f32(vgetq_lane_f32(b, 0), a, 0);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("mov %0.s[0], %1.s[0]        \n\t" : "+w"(a) : "w"(b));
     return a;
+#endif
 }
 
 FORCE_INLINE __m128d _mm_move_sd(__m128d a, __m128d b)
 {
-    __asm__ __volatile__(
-        "mov %0.d[0], %1.d[0]        \n\t"
-        :"+w"(a)
-        :"w"(b)
-    );
+#if defined(_MSC_VER) && !defined(__clang__)
+    return vsetq_lane_f64(vgetq_lane_f64(b, 0), a, 0);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("mov %0.d[0], %1.d[0]        \n\t" : "+w"(a) : "w"(b));
+#endif
     return a;
 }
 
@@ -595,48 +612,115 @@ FORCE_INLINE int _mm_testz_si128(__m128i a, __m128i b)
 FORCE_INLINE int _mm_extract_epi32(__m128i a, const int imm8)
 {
     assert(imm8 >= 0 && imm8 <= 3);
-    return a.vect_s32[imm8];
+    switch (imm8) {
+        case 0:
+            return GET_LANE_S32_FROM128(a, 0);
+        case 1:
+            return GET_LANE_S32_FROM128(a, 1);
+        case 2:
+            return GET_LANE_S32_FROM128(a, 2);
+        case 3:
+            return GET_LANE_S32_FROM128(a, 3);
+        default:
+            // this will never access
+            return GET_LANE_S32_FROM128(a, 0);
+    }
 }
 
 FORCE_INLINE int _mm_extract_ps (__m128 a, const int imm8)
 {
     assert(imm8 >= 0 && imm8 <= 3);
+#if defined(_MSC_VER) && !defined(__clang__)
+    int32x4_t val = vreinterpretq_s32_f32(a);
+    switch (imm8) {
+        case 0:
+            return vgetq_lane_s32(val, 0);
+        case 1:
+            return vgetq_lane_s32(val, 1);
+        case 2:
+            return vgetq_lane_s32(val, 2);
+        case 3:
+            return vgetq_lane_s32(val, 3);
+        default:
+            // this will never access
+            return vgetq_lane_s32(val, 0);
+    }
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     return vreinterpretq_s32_f32(a)[imm8];
+#endif
 }
 
-FORCE_INLINE __int64 _mm_extract_epi64 (__m128i a, const int imm8)
+FORCE_INLINE __int64 _mm_extract_epi64(__m128i a, const int imm8)
 {
     assert(imm8 >= 0 && imm8 <= 1);
+#if defined(_MSC_VER) && !defined(__clang__)
+    switch (imm8) {
+        case 0:
+            return GET_LANE_S64_FROM128(a, 0);
+        case 1:
+            return GET_LANE_S64_FROM128(a, 1);
+        default:
+            // this will never access
+            return GET_LANE_S64_FROM128(a, 0);
+    }
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     return a.vect_s64[imm8];
+#endif
 }
 
-FORCE_INLINE unsigned int _mm_crc32_u8 (unsigned int crc, unsigned char v)
+FORCE_INLINE unsigned int _mm_crc32_u8(unsigned int crc, unsigned char v)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    return __crc32b(crc, v);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile__("crc32cb %w[c], %w[c], %w[v]\n\t" : [c] "+r"(crc) : [v] "r"(v));
+#endif
     return crc;
 }
 
 FORCE_INLINE unsigned int _mm_crc32_u16(unsigned int crc, unsigned short v)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    return __crc32ch(crc, v);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile__("crc32ch %w[c], %w[c], %w[v]\n\t" : [c] "+r"(crc) : [v] "r"(v));
     return crc;
+#endif
 }
 
 FORCE_INLINE unsigned int _mm_crc32_u32(unsigned int crc, unsigned int v)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    return __crc32cw(crc, v);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile__("crc32cw %w[c], %w[c], %w[v]\n\t" : [c] "+r"(crc) : [v] "r"(v));
     return crc;
+#endif
 }
 
+#if defined (_MSC_VER) && !defined (__clang__)
+#include <intrin.h>
+#endif
 FORCE_INLINE unsigned __int64 _mm_crc32_u64(unsigned __int64 crc, unsigned __int64 v)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    return __crc32cd(crc, v);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile__("crc32cx %w[c], %w[c], %x[v]\n\t" : [c] "+r"(crc) : [v] "r"(v));
     return crc;
+#endif
 }
 
 FORCE_INLINE __m128d _mm_set_pd(double e1, double e0)
 {
     __m128d res_m128d;
+    res_m128d = vdupq_n_f64(0);
     SET64x2(res_m128d, e0, e1);
     return res_m128d;
 }
@@ -656,6 +740,7 @@ FORCE_INLINE __m128d _mm_set1_pd(double a)
 FORCE_INLINE __m128i _mm_set_epi32(int e3, int e2, int e1, int e0)
 {
     __m128i res_m128i;
+    res_m128i.vect_s32 = vdupq_n_s32(0);
     SET32x4(res_m128i.vect_s32, e0, e1, e2, e3);
     return res_m128i;
 }
@@ -663,6 +748,7 @@ FORCE_INLINE __m128i _mm_set_epi32(int e3, int e2, int e1, int e0)
 FORCE_INLINE __m128i _mm_set_epi64x(int64_t e1, int64_t e0)
 {
     __m128i res_m128i;
+    res_m128i.vect_s64 = vdupq_n_s64(0);
     SET64x2(res_m128i.vect_s64, e0, e1);
     return res_m128i;
 }
@@ -954,11 +1040,12 @@ FORCE_INLINE int neg_fun(int res, int lb, int imm8, int bound)
 
     return res & ((bound == 8) ? 0xFF : 0xFFFF);
 }
+
 FORCE_INLINE int _mm_cmpestri(__m128i a, int la, __m128i b, int lb, const int imm8)
 {
     int bound = (imm8 & 0x01) ? 8 : 16;
-#if defined(_MSC_VER) && defined(__clang__)
-    // Clang-cl does not support 'asr' in inline asm for ARM, so use C code
+#if defined(_MSC_VER)
+    // msvc and msvc-like compiler does not support 'asr' in inline asm for ARM, so use C code
     if (la < 0) la = 0;
     if (lb < 0) lb = 0;
     if (la > bound) la = bound;
@@ -988,8 +1075,8 @@ FORCE_INLINE __m128i _mm_cmpestrm(__m128i a, int la, __m128i b, int lb, const in
 {
     __m128i dst;
     int bound = (imm8 & 0x01) ? 8 : 16;
-#if defined(_MSC_VER) && defined(__clang__)
-    // Clang-cl does not support 'asr' in inline asm for ARM, so use C code
+#if defined(_MSC_VER)
+    // msvc and msvc-like compiler does not support 'asr' in inline asm for ARM, so use C code
     if (la < 0) la = 0;
     if (lb < 0) lb = 0;
     if (la > bound) la = bound;
@@ -1256,9 +1343,8 @@ FORCE_INLINE __m128i _mm_slli_si128(__m128i a, const int imm8)
     __m128i res;
     if (imm8 > 0 && imm8 <= 15) {
         int8x16_t zero = vdupq_n_s8(0);
-#if defined(_MSC_VER) && defined(__clang__)
-        // Clang-cl does not support 'i' constraint for immediates in inline asm.
-        // Use NEON intrinsic instead.
+#if defined(_MSC_VER)
+        // msvc and msvc-like compiler does not support 'asr' in inline asm for ARM, so use C code
         switch (imm8)
         {
         case 1:
@@ -1764,19 +1850,36 @@ FORCE_INLINE int _mm_movemask_ps(__m128 a)
 
 FORCE_INLINE int _mm_movemask_epi8(__m128i a)
 {
+#if defined(_MSC_VER) && !defined(__clang__)
+    uint8x16_t shifted = vshrq_n_u8(a.vect_u8, 7);
+
+    // 构造权重向量：每个位置对应 2 的幂
+    const uint8_t powers[16] = {1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128};
+    uint8x16_t weights = vld1q_u8(powers);
+
+    // 与权重相与，得到每个位置的贡献
+    uint8x16_t masked = vandq_u8(shifted, weights);
+
+    // 累加所有字节的值
+    uint64x2_t sum64 = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(masked)));
+
+    // 合并两个 64 位结果为一个 16 位掩码
+    return (uint32_t)(vgetq_lane_u64(sum64, 0) | (vgetq_lane_u64(sum64, 1) << 8));
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     int res;
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         "ushr %[a0].16b, %[a0].16b, #7          \n\t"
         "usra %[a0].8h, %[a0].8h, #7            \n\t"
         "usra %[a0].4s, %[a0].4s, #14           \n\t"
         "usra %[a0].2d, %[a0].2d, #28           \n\t"
         "ins %[a0].b[1], %[a0].b[8]             \n\t"
         "umov %w[r], %[a0].h[0]"
-        :[r]"=r"(res), [a0]"+w"(a.vect_u8)
+        : [r] "=r"(res), [a0] "+w"(a.vect_u8)
         :
-        :
-    );
+        :);
     return res;
+#endif
 }
 
 FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a,__m128i b)
@@ -1787,16 +1890,19 @@ FORCE_INLINE __m128i _mm_shuffle_epi8(__m128i a,__m128i b)
     return res;
 }
 
-#include <stdlib.h>
 #ifdef _WIN32
 #include <malloc.h>
 #endif
-
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winfinite-recursion"
+#endif
 FORCE_INLINE void* _mm_malloc(size_t size, size_t align)
 {
     void* ptr = NULL;
 #ifdef _WIN32
     ptr = _aligned_malloc(size, align);
+    printf("111111111111111111\n");
 #else
     if (align == 1)
         return malloc(size);
@@ -1805,6 +1911,7 @@ FORCE_INLINE void* _mm_malloc(size_t size, size_t align)
     if (posix_memalign(&ptr, align, size) != 0)
         ptr = NULL;
 #endif
+    printf("2222222222222222222\n");
     return ptr;
 }
 
@@ -1816,6 +1923,9 @@ FORCE_INLINE void _mm_free(void* mem_addr)
     free(mem_addr);
 #endif
 }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 FORCE_INLINE __m128i _mm_subs_epu8(__m128i a, __m128i b)
 {
@@ -1833,7 +1943,34 @@ FORCE_INLINE __m128i _mm_subs_epu16(__m128i a, __m128i b)
 
 FORCE_INLINE int _mm_extract_epi16(__m128i a, const int imm8)
 {
-	return a.vect_s16[imm8 & 0x7] & 0xffff;
+#if defined(_MSC_VER) && !defined(__clang__)
+    const unsigned char index = imm8 & 0x7;
+    switch (index) {
+        case 0:
+            return vgetq_lane_s16(a.vect_s16, 0);
+        case 1:
+            return vgetq_lane_s16(a.vect_s16, 1);
+        case 2:
+            return vgetq_lane_s16(a.vect_s16, 2);
+        case 3:
+            return vgetq_lane_s16(a.vect_s16, 3);
+        case 4:
+            return vgetq_lane_s16(a.vect_s16, 4);
+        case 5:
+            return vgetq_lane_s16(a.vect_s16, 5);
+        case 6:
+            return vgetq_lane_s16(a.vect_s16, 6);
+        case 7:
+            return vgetq_lane_s16(a.vect_s16, 7);
+        default:
+            // unreachable
+            assert(0 && "Unexpected value imm8");
+            return vgetq_lane_s16(a.vect_s16, 0);
+    }
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    return a.vect_s16[imm8 & 0x7] & 0xffff;
+#endif
 }
 
 FORCE_INLINE __m128i _mm_max_epi16(__m128i a, __m128i b)
@@ -1866,8 +2003,16 @@ FORCE_INLINE __m128 _mm_mask_fmadd_ps(__m128 a, __mmask8 k, __m128 b, __m128 c)
     uint32_t m1 = (k & 0x2) ? 0xFFFFFFFF : 0;
     uint32_t m2 = (k & 0x4) ? 0xFFFFFFFF : 0;
     uint32_t m3 = (k & 0x8) ? 0xFFFFFFFF : 0;
-
-    uint32x4_t mask = (uint32x4_t){ m0, m1, m2, m3 };
+#if defined(_MSC_VER) && !defined(__clang__)
+    uint32x4_t mask = vdupq_n_u32(0);
+    mask = vsetq_lane_u32(m0, mask, 0);
+    mask = vsetq_lane_u32(m0, mask, 1);
+    mask = vsetq_lane_u32(m0, mask, 2);
+    mask = vsetq_lane_u32(m0, mask, 3);
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+    uint32x4_t mask = (uint32x4_t){m0, m1, m2, m3};
+#endif
     float32x4_t muladd = vfmaq_f32(c, a, b);
     float32x4_t result = vbslq_f32(mask, muladd, a);
     return result;
