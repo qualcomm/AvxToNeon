@@ -716,42 +716,28 @@ FORCE_INLINE __m256i _mm256_mulhi_epi32(__m256i a, __m256i b)
     return a;
 #endif
 #if defined(_MSC_VER) && !defined(__clang__)
-    // Construct vectors for even and odd indices
-    int32x2_t a0_lo =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[0], 2) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[0], 0));
-    int32x2_t a0_hi =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[0], 3) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[0], 1));
-    int32x2_t a1_lo =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[1], 2) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[1], 0));
-    int32x2_t a1_hi =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(a.vect_s32[1], 3) << 32) | (uint32_t)vgetq_lane_s32(a.vect_s32[1], 1));
+	__m256i result;
 
-    int32x2_t b0_lo =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[0], 2) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[0], 0));
-    int32x2_t b0_hi =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[0], 3) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[0], 1));
-    int32x2_t b1_lo =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[1], 2) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[1], 0));
-    int32x2_t b1_hi =
-        vcreate_s32(((uint64_t)vgetq_lane_s32(b.vect_s32[1], 3) << 32) | (uint32_t)vgetq_lane_s32(b.vect_s32[1], 1));
+	// 低 128 位：a.vect_s32[0] 和 b.vect_s32[0]
+	int64x2_t low0 = vmull_s32(vget_low_s32(a.vect_s32[0]), vget_low_s32(b.vect_s32[0]));
+	int64x2_t low1 = vmull_s32(vget_high_s32(a.vect_s32[0]), vget_high_s32(b.vect_s32[0]));
 
-    // Multiply
-    int64x2_t r0_lo = vmull_s32(a0_lo, b0_lo);
-    int64x2_t r0_hi = vmull_s32(a0_hi, b0_hi);
-    int64x2_t r1_lo = vmull_s32(a1_lo, b1_lo);
-    int64x2_t r1_hi = vmull_s32(a1_hi, b1_hi);
+	// 提取高 32 位
+	result.vect_s32[0] = vcombine_s32(
+		vshrn_n_s64(low0, 32),  // 提取 low0 的高 32 位
+		vshrn_n_s64(low1, 32)   // 提取 low1 的高 32 位
+	);
 
-    // Extract high 32 bits
-    int32x2_t hi0_lo = vshrn_n_s64(r0_lo, 32);
-    int32x2_t hi0_hi = vshrn_n_s64(r0_hi, 32);
-    int32x2_t hi1_lo = vshrn_n_s64(r1_lo, 32);
-    int32x2_t hi1_hi = vshrn_n_s64(r1_hi, 32);
+	// 高 128 位：a.vect_s32[1] 和 b.vect_s32[1]
+	int64x2_t high0 = vmull_s32(vget_low_s32(a.vect_s32[1]), vget_low_s32(b.vect_s32[1]));
+	int64x2_t high1 = vmull_s32(vget_high_s32(a.vect_s32[1]), vget_high_s32(b.vect_s32[1]));
 
-    // Combine results
-    __m256i result;
-    result.vect_s32[0] = vcombine_s32(hi0_lo, hi0_hi);
-    result.vect_s32[1] = vcombine_s32(hi1_lo, hi1_hi);
-    return result;
+	result.vect_s32[1] = vcombine_s32(
+		vshrn_n_s64(high0, 32),
+		vshrn_n_s64(high1, 32)
+	);
+
+	return result;
 #endif
 }
 
@@ -1752,29 +1738,32 @@ FORCE_INLINE __m256d _mm256_or_pd (__m256d a, __m256d b)
 FORCE_INLINE int _mm256_movemask_epi8 (__m256i a)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-    // Shift each byte right by 7 to isolate the MSB
-    uint8x16_t a0 = vshrq_n_u8(a.vect_u8[0], 7);
-    uint8x16_t a1 = vshrq_n_u8(a.vect_u8[1], 7);
+	// Step 1: ushr 7 on 8-bit
+	uint8x16_t a0 = vshrq_n_u8(a.vect_u8[0], 7);
+	uint8x16_t a1 = vshrq_n_u8(a.vect_u8[1], 7);
 
-    // Define powers of 2 for each byte position
-    static const uint8_t powers_data[16] = {1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128};
-    uint8x16_t powers = vld1q_u8(powers_data);
+	// Step 2: usra 7 on 16-bit
+	uint16x8_t a0_16 = vaddq_u16(vreinterpretq_u16_u8(a0), vshrq_n_u16(vreinterpretq_u16_u8(a0), 7));
+	uint16x8_t a1_16 = vaddq_u16(vreinterpretq_u16_u8(a1), vshrq_n_u16(vreinterpretq_u16_u8(a1), 7));
 
-    // Apply mask to extract weighted bits
-    uint8x16_t masked0 = vandq_u8(a0, powers);
-    uint8x16_t masked1 = vandq_u8(a1, powers);
+	// Step 3: usra 14 on 32-bit
+	uint32x4_t a0_32 = vaddq_u32(vreinterpretq_u32_u16(a0_16), vshrq_n_u32(vreinterpretq_u32_u16(a0_16), 14));
+	uint32x4_t a1_32 = vaddq_u32(vreinterpretq_u32_u16(a1_16), vshrq_n_u32(vreinterpretq_u32_u16(a1_16), 14));
 
-    // Sum bits using pairwise additions
-    uint16x8_t sum0_u16 = vpaddlq_u8(masked0);
-    uint16x8_t sum1_u16 = vpaddlq_u8(masked1);
-    uint32x4_t sum0_u32 = vpaddlq_u16(sum0_u16);
-    uint32x4_t sum1_u32 = vpaddlq_u16(sum1_u16);
-    uint64x2_t sum0_u64 = vpaddlq_u32(sum0_u32);
-    uint64x2_t sum1_u64 = vpaddlq_u32(sum1_u32);
+	// Step 4: usra 28 on 64-bit
+	uint64x2_t a0_64 = vaddq_u64(vreinterpretq_u64_u32(a0_32), vshrq_n_u64(vreinterpretq_u64_u32(a0_32), 28));
+	uint64x2_t a1_64 = vaddq_u64(vreinterpretq_u64_u32(a1_32), vshrq_n_u64(vreinterpretq_u64_u32(a1_32), 28));
 
-    // Extract final mask bits
-    int mask = (int)vgetq_lane_u64(sum0_u64, 0) | ((int)vgetq_lane_u64(sum1_u64, 0) << 16);
-    return mask;
+	// Step 5: 插入字节
+	uint8x16_t res_a0 = vreinterpretq_u8_u64(a0_64);
+    uint8x16_t res_a1 = vreinterpretq_u8_u64(a1_64);
+    res_a0 = vsetq_lane_u8(vgetq_lane_u8(res_a0, 8), res_a0, 1);
+    res_a0 = vsetq_lane_u8(vgetq_lane_u8(res_a1, 0), res_a0, 2);
+    res_a0 = vsetq_lane_u8(vgetq_lane_u8(res_a1, 8), res_a0, 3);
+
+	// Step 6: 提取结果
+	uint32x4_t result_32 = vreinterpretq_u32_u8(res_a0);
+	return vgetq_lane_u32(result_32, 0);
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -1956,17 +1945,21 @@ FORCE_INLINE __m256i _mm256_permute2f128_si256 (__m256i a, __m256i b, int imm8)
 
 FORCE_INLINE __m256i _mm256_set_epi32(int e7, int e6, int e5, int e4, int e3, int e2, int e1, int e0)
 {
-    __m256i res_m256i;
+	__m256i res_m256i;
     SET32x4(res_m256i.vect_s32[0], e0, e1, e2, e3);
     SET32x4(res_m256i.vect_s32[1], e4, e5, e6, e7);
-    return res_m256i;
+	return res_m256i;
 }
 
 FORCE_INLINE __m256i _mm256_set_epi64x(int64_t e3, int64_t e2, int64_t e1, int64_t e0)
 {
     __m256i res_m256i;
-    SET64x2(res_m256i.vect_s64[0], e0, e1);
-    SET64x2(res_m256i.vect_s64[1], e2, e3);
+    //SET64x2(res_m256i.vect_s64[0], e0, e1);
+    //SET64x2(res_m256i.vect_s64[1], e2, e3);
+    res_m256i.vect_s64[0] = vsetq_lane_s64(e0, res_m256i.vect_s64[0], 0);
+    res_m256i.vect_s64[0] = vsetq_lane_s64(e1, res_m256i.vect_s64[0], 1);
+    res_m256i.vect_s64[1] = vsetq_lane_s64(e2, res_m256i.vect_s64[1], 0);
+    res_m256i.vect_s64[1] = vsetq_lane_s64(e3, res_m256i.vect_s64[1], 1);
     return res_m256i;
 }
 
@@ -1981,16 +1974,35 @@ FORCE_INLINE __m256i _mm256_set_m128i(__m128i hi, __m128i lo)
 FORCE_INLINE __m256 _mm256_set_ps(float e7, float e6, float e5, float e4, float e3, float e2, float e1, float e0)
 {
     __m256 res_m256;
-    SET32x4(res_m256.vect_f32[0], e0, e1, e2, e3);
-    SET32x4(res_m256.vect_f32[1], e4, e5, e6, e7);
+    res_m256.vect_f32[0] = vdupq_n_f32(0.0f);
+    res_m256.vect_f32[1] = vdupq_n_f32(0.0f);
+
+    res_m256.vect_f32[0] = vsetq_lane_f32(e0, res_m256.vect_f32[0], 0);
+    res_m256.vect_f32[0] = vsetq_lane_f32(e1, res_m256.vect_f32[0], 1);
+    res_m256.vect_f32[0] = vsetq_lane_f32(e2, res_m256.vect_f32[0], 2);
+    res_m256.vect_f32[0] = vsetq_lane_f32(e3, res_m256.vect_f32[0], 3);
+
+    res_m256.vect_f32[1] = vsetq_lane_f32(e4, res_m256.vect_f32[1], 0);
+    res_m256.vect_f32[1] = vsetq_lane_f32(e5, res_m256.vect_f32[1], 1);
+    res_m256.vect_f32[1] = vsetq_lane_f32(e6, res_m256.vect_f32[1], 2);
+    res_m256.vect_f32[1] = vsetq_lane_f32(e7, res_m256.vect_f32[1], 3);
+
+    //SET32x4(res_m256.vect_f32[0], e0, e1, e2, e3);
+    //SET32x4(res_m256.vect_f32[1], e4, e5, e6, e7);
     return res_m256;
 }
 
 FORCE_INLINE __m256d _mm256_set_pd(double e3, double e2, double e1, double e0)
 {
     __m256d res_m256d;
-    SET64x2(res_m256d.vect_f64[0], e0, e1);
-    SET64x2(res_m256d.vect_f64[1], e2, e3);
+    res_m256d.vect_f64[0] = vdupq_n_f64(0);
+    res_m256d.vect_f64[1] = vdupq_n_f64(0);
+    //SET64x2(res_m256d.vect_f64[0], e0, e1);
+    //SET64x2(res_m256d.vect_f64[1], e2, e3);
+    res_m256d.vect_f64[0] = vsetq_lane_f64(e0, res_m256d.vect_f64[0], 0);
+    res_m256d.vect_f64[0] = vsetq_lane_f64(e1, res_m256d.vect_f64[0], 1);
+    res_m256d.vect_f64[1] = vsetq_lane_f64(e2, res_m256d.vect_f64[1], 0);
+    res_m256d.vect_f64[1] = vsetq_lane_f64(e3, res_m256d.vect_f64[1], 1);
     return res_m256d;
 }
 

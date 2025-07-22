@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2019. Huawei Technologies Co., Ltd. All rights reserved.
 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1698,43 +1698,33 @@ FORCE_INLINE __m512d _mm512_cmp_pd(__m512d a, __m512d b, const int imm8)
 
 FORCE_INLINE __mmask8 _mm512_cmp_pd_mask(__m512d a, __m512d b, const int imm8)
 {
-#if defined(_MSC_VER) && !defined(__clang__)
-    assert(imm8 >= 0 && imm8 < 32);
-    uint64x2_t cmp[4];
-    for (int i = 0; i < 4; ++i) {
-        switch (imm8) {
-            case 0: // Equal
-                cmp[i] = vreinterpretq_u64_u32(vceqq_f64(a.vect_f64[i], b.vect_f64[i]));
-                break;
-            case 1: // Less than
-                cmp[i] = vreinterpretq_u64_u32(vcltq_f64(a.vect_f64[i], b.vect_f64[i]));
-                break;
-            case 2: // Greater than
-                cmp[i] = vreinterpretq_u64_u32(vcgtq_f64(a.vect_f64[i], b.vect_f64[i]));
-                break;
-            default:
-                // Unsupported mode
-                cmp[i] = vdupq_n_u64(0);
-                break;
-        }
-    }
 
-    // Extract MSB of each 64-bit lane to form mask
-    __mmask8 mask = 0;
-    for (int i = 0; i < 4; ++i) {
-        mask |= ((vgetq_lane_u64(cmp[i], 0) >> 63) << (i * 2));
-        mask |= ((vgetq_lane_u64(cmp[i], 1) >> 63) << (i * 2 + 1));
-    }
 
-    return mask;
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
     assert(imm8 < 32 && imm8 >= 0);
     __m512d dst = _mm512_cmp_pd(a, b, imm8);
     __mmask8 res = 0;
     uint64x2_t vect_mask = vld1q_u64(g_mask_epi64);
     __m512i tmp = _mm512_setzero_si512();
+#if defined(_MSC_VER) && !defined(__clang__)
+	uint64x2_t t[4];
+	uint64_t r[4];
+
+	// 1. reinterpret float64x2_t to uint64x2_t and apply mask
+	for (int i = 0; i < 4; ++i) {
+		uint64x2_t d = vreinterpretq_u64_f64(dst.vect_f64[i]);
+		t[i] = vandq_u64(d, vect_mask);
+	}
+
+	// 2. pairwise add: r[i] = t[i][0] + t[i][1]
+	for (int i = 0; i < 4; ++i) {
+		r[i] = vgetq_lane_u64(t[i], 0) + vgetq_lane_u64(t[i], 1);
+	}
+
+	// 3. combine into __mmask8
+	res = (r[0] & 0x3) | ((r[1] & 0x3) << 2) | ((r[2] & 0x3) << 4) | ((r[3] & 0x3) << 6);
+	return res;
+#endif
+#if defined(__GNUC__) || defined(__clang__)
     uint64_t r[4];
     __asm__ __volatile__(
         "and %[t0].16b, %[d0].16b, %[mask].16b        \n\t"
@@ -2133,10 +2123,18 @@ FORCE_INLINE __m512i _mm512_set_epi64(
     __int64 e7, __int64 e6, __int64 e5, __int64 e4, __int64 e3, __int64 e2, __int64 e1, __int64 e0)
 {
     __m512i res_m512i;
-    SET64x2(res_m512i.vect_s64[0], e0, e1);
-    SET64x2(res_m512i.vect_s64[1], e2, e3);
-    SET64x2(res_m512i.vect_s64[2], e4, e5);
-    SET64x2(res_m512i.vect_s64[3], e6, e7);
+    //SET64x2(res_m512i.vect_s64[0], e0, e1);
+    //SET64x2(res_m512i.vect_s64[1], e2, e3);
+    //SET64x2(res_m512i.vect_s64[2], e4, e5);
+    //SET64x2(res_m512i.vect_s64[3], e6, e7);
+    res_m512i.vect_s64[0] = vsetq_lane_s64(e0, res_m512i.vect_s64[0], 0);
+    res_m512i.vect_s64[0] = vsetq_lane_s64(e1, res_m512i.vect_s64[0], 1);
+    res_m512i.vect_s64[1] = vsetq_lane_s64(e2, res_m512i.vect_s64[1], 0);
+    res_m512i.vect_s64[1] = vsetq_lane_s64(e3, res_m512i.vect_s64[1], 1);
+    res_m512i.vect_s64[2] = vsetq_lane_s64(e4, res_m512i.vect_s64[2], 0);
+    res_m512i.vect_s64[2] = vsetq_lane_s64(e5, res_m512i.vect_s64[2], 1);
+    res_m512i.vect_s64[3] = vsetq_lane_s64(e6, res_m512i.vect_s64[3], 0);
+    res_m512i.vect_s64[3] = vsetq_lane_s64(e7, res_m512i.vect_s64[3], 1);
     return res_m512i;
 }
 
@@ -2174,10 +2172,29 @@ FORCE_INLINE __m512 _mm512_set_ps(float e15, float e14, float e13, float e12, fl
     float e7, float e6, float e5, float e4, float e3, float e2, float e1, float e0)
 {
     __m512 res_m512;
-    SET32x4(res_m512.vect_f32[0], e0, e1, e2, e3);
-    SET32x4(res_m512.vect_f32[1], e4, e5, e6, e7);
-    SET32x4(res_m512.vect_f32[2], e8, e9, e10, e11);
-    SET32x4(res_m512.vect_f32[3], e12, e13, e14, e15);
+    //SET32x4(res_m512.vect_f32[0], e0, e1, e2, e3);
+    //SET32x4(res_m512.vect_f32[1], e4, e5, e6, e7);
+    //SET32x4(res_m512.vect_f32[2], e8, e9, e10, e11);
+    //SET32x4(res_m512.vect_f32[3], e12, e13, e14, e15);
+    res_m512.vect_f32[0] = vsetq_lane_f32(e0, res_m512.vect_f32[0], 0);
+    res_m512.vect_f32[0] = vsetq_lane_f32(e1, res_m512.vect_f32[0], 1);
+    res_m512.vect_f32[0] = vsetq_lane_f32(e2, res_m512.vect_f32[0], 2);
+    res_m512.vect_f32[0] = vsetq_lane_f32(e3, res_m512.vect_f32[0], 3);
+
+    res_m512.vect_f32[1] = vsetq_lane_f32(e4, res_m512.vect_f32[1], 0);
+    res_m512.vect_f32[1] = vsetq_lane_f32(e5, res_m512.vect_f32[1], 1);
+    res_m512.vect_f32[1] = vsetq_lane_f32(e6, res_m512.vect_f32[1], 2);
+    res_m512.vect_f32[1] = vsetq_lane_f32(e7, res_m512.vect_f32[1], 3);
+
+    res_m512.vect_f32[2] = vsetq_lane_f32(e8, res_m512.vect_f32[2], 0);
+    res_m512.vect_f32[2] = vsetq_lane_f32(e9, res_m512.vect_f32[2], 1);
+    res_m512.vect_f32[2] = vsetq_lane_f32(e10, res_m512.vect_f32[2], 2);
+    res_m512.vect_f32[2] = vsetq_lane_f32(e11, res_m512.vect_f32[2], 3);
+
+    res_m512.vect_f32[3] = vsetq_lane_f32(e12, res_m512.vect_f32[3], 0);
+    res_m512.vect_f32[3] = vsetq_lane_f32(e13, res_m512.vect_f32[3], 1);
+    res_m512.vect_f32[3] = vsetq_lane_f32(e14, res_m512.vect_f32[3], 2);
+    res_m512.vect_f32[3] = vsetq_lane_f32(e15, res_m512.vect_f32[3], 3);
     return res_m512;
 }
 
@@ -2185,10 +2202,18 @@ FORCE_INLINE __m512d _mm512_set_pd(
     double e7, double e6, double e5, double e4, double e3, double e2, double e1, double e0)
 {
     __m512d res_m512d;
-    SET64x2(res_m512d.vect_f64[0], e0, e1);
-    SET64x2(res_m512d.vect_f64[1], e2, e3);
-    SET64x2(res_m512d.vect_f64[2], e4, e5);
-    SET64x2(res_m512d.vect_f64[3], e6, e7);
+    //SET64x2(res_m512d.vect_f64[0], e0, e1);
+    //SET64x2(res_m512d.vect_f64[1], e2, e3);
+    //SET64x2(res_m512d.vect_f64[2], e4, e5);
+    //SET64x2(res_m512d.vect_f64[3], e6, e7);
+    res_m512d.vect_f64[0] = vsetq_lane_f64(e0, res_m512d.vect_f64[0], 0);
+    res_m512d.vect_f64[0] = vsetq_lane_f64(e1, res_m512d.vect_f64[0], 1);
+    res_m512d.vect_f64[1] = vsetq_lane_f64(e2, res_m512d.vect_f64[1], 0);
+    res_m512d.vect_f64[1] = vsetq_lane_f64(e3, res_m512d.vect_f64[1], 1);
+    res_m512d.vect_f64[2] = vsetq_lane_f64(e4, res_m512d.vect_f64[2], 0);
+    res_m512d.vect_f64[2] = vsetq_lane_f64(e5, res_m512d.vect_f64[2], 1);
+    res_m512d.vect_f64[3] = vsetq_lane_f64(e6, res_m512d.vect_f64[3], 0);
+    res_m512d.vect_f64[3] = vsetq_lane_f64(e7, res_m512d.vect_f64[3], 1);
     return res_m512d;
 }
 

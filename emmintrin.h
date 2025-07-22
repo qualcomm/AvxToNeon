@@ -673,12 +673,12 @@ FORCE_INLINE __int64 _mm_extract_epi64(__m128i a, const int imm8)
 FORCE_INLINE unsigned int _mm_crc32_u8(unsigned int crc, unsigned char v)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-    return __crc32b(crc, v);
+    return __crc32cb(crc, v);
 #endif
 #if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile__("crc32cb %w[c], %w[c], %w[v]\n\t" : [c] "+r"(crc) : [v] "r"(v));
-#endif
     return crc;
+#endif
 }
 
 FORCE_INLINE unsigned int _mm_crc32_u16(unsigned int crc, unsigned short v)
@@ -703,9 +703,6 @@ FORCE_INLINE unsigned int _mm_crc32_u32(unsigned int crc, unsigned int v)
 #endif
 }
 
-#if defined (_MSC_VER) && !defined (__clang__)
-#include <intrin.h>
-#endif
 FORCE_INLINE unsigned __int64 _mm_crc32_u64(unsigned __int64 crc, unsigned __int64 v)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
@@ -721,7 +718,9 @@ FORCE_INLINE __m128d _mm_set_pd(double e1, double e0)
 {
     __m128d res_m128d;
     res_m128d = vdupq_n_f64(0);
-    SET64x2(res_m128d, e0, e1);
+    //SET64x2(res_m128d, e0, e1);
+    res_m128d = vsetq_lane_f64(e0, res_m128d, 0);
+    res_m128d = vsetq_lane_f64(e1, res_m128d, 1);
     return res_m128d;
 }
 
@@ -749,7 +748,9 @@ FORCE_INLINE __m128i _mm_set_epi64x(int64_t e1, int64_t e0)
 {
     __m128i res_m128i;
     res_m128i.vect_s64 = vdupq_n_s64(0);
-    SET64x2(res_m128i.vect_s64, e0, e1);
+    //SET64x2(res_m128i.vect_s64, e0, e1);
+    res_m128i.vect_s64 = vsetq_lane_s64(e0, res_m128i.vect_s64, 0);
+    res_m128i.vect_s64 = vsetq_lane_s64(e1, res_m128i.vect_s64, 1);
     return res_m128i;
 }
 
@@ -1851,20 +1852,31 @@ FORCE_INLINE int _mm_movemask_ps(__m128 a)
 FORCE_INLINE int _mm_movemask_epi8(__m128i a)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-    uint8x16_t shifted = vshrq_n_u8(a.vect_u8, 7);
 
-    // 构造权重向量：每个位置对应 2 的幂
-    const uint8_t powers[16] = {1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128};
-    uint8x16_t weights = vld1q_u8(powers);
+	// 第一步：右移每个字节 7 位
+	uint8x16_t v_u8 = vshrq_n_u8(a.vect_u8, 7);
 
-    // 与权重相与，得到每个位置的贡献
-    uint8x16_t masked = vandq_u8(shifted, weights);
+	// 第二步：转换为 uint16x8_t 并 usra（右移 7 位后加回）
+	uint16x8_t v_u16 = vreinterpretq_u16_u8(v_u8);
+	v_u16 = vshrq_n_u16(v_u16, 7);
+	v_u16 = vaddq_u16(v_u16, vreinterpretq_u16_u8(v_u8));
 
-    // 累加所有字节的值
-    uint64x2_t sum64 = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(masked)));
+	// 第三步：转换为 uint32x4_t 并 usra（右移 14 位后加回）
+	uint32x4_t v_u32 = vreinterpretq_u32_u16(v_u16);
+	v_u32 = vaddq_u32(v_u32, vshrq_n_u32(v_u32, 14));
 
-    // 合并两个 64 位结果为一个 16 位掩码
-    return (uint32_t)(vgetq_lane_u64(sum64, 0) | (vgetq_lane_u64(sum64, 1) << 8));
+	// 第四步：转换为 uint64x2_t 并 usra（右移 28 位后加回）
+	uint64x2_t v_u64 = vreinterpretq_u64_u32(v_u32);
+	v_u64 = vaddq_u64(v_u64, vshrq_n_u64(v_u64, 28));
+
+	// 第五步：将第 8 个字节插入到第 1 个字节
+	uint8x16_t v_final = vreinterpretq_u8_u64(v_u64);
+	v_final = vsetq_lane_u8(vgetq_lane_u8(v_final, 8), v_final, 1);
+
+	// 第六步：提取第一个 halfword（uint16_t）
+	uint16x8_t v_final_u16 = vreinterpretq_u16_u8(v_final);
+	return vgetq_lane_u16(v_final_u16, 0);
+
 #endif
 #if defined(__GNUC__) || defined(__clang__)
     int res;
@@ -2006,9 +2018,9 @@ FORCE_INLINE __m128 _mm_mask_fmadd_ps(__m128 a, __mmask8 k, __m128 b, __m128 c)
 #if defined(_MSC_VER) && !defined(__clang__)
     uint32x4_t mask = vdupq_n_u32(0);
     mask = vsetq_lane_u32(m0, mask, 0);
-    mask = vsetq_lane_u32(m0, mask, 1);
-    mask = vsetq_lane_u32(m0, mask, 2);
-    mask = vsetq_lane_u32(m0, mask, 3);
+    mask = vsetq_lane_u32(m1, mask, 1);
+    mask = vsetq_lane_u32(m2, mask, 2);
+    mask = vsetq_lane_u32(m3, mask, 3);
 #endif
 #if defined(__GNUC__) || defined(__clang__)
     uint32x4_t mask = (uint32x4_t){m0, m1, m2, m3};

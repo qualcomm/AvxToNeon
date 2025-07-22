@@ -4909,8 +4909,14 @@ int test_mm256_castpd256_pd128()
 {
     float64_t *src = g_test_mm256_castpd256_pd128_data.a;
     __m256d a = _mm256_set_pd(src[3], src[2], src[1], src[0]);
+    //double vala[4];
+    //vst1q_f64(&vala[0], a.vect_f64[0]);
+    //vst1q_f64(&vala[2], a.vect_f64[1]);
+    //printf("test_mm256_castpd256_pd128 __m256d a = {%f, %f, %f, %f}\n", vala[0], vala[1], vala[2], vala[3]);
     __m128d dst = _mm256_castpd256_pd128(a);
-
+    //double vals[2];
+    //vst1q_f64(vals, dst);
+    //printf("__m128d dst = {%f, %f}\n", vals[0], vals[1]);
     return comp_return(g_test_mm256_castpd256_pd128_data.expect, &dst, sizeof(dst));
 }
 
@@ -5401,8 +5407,12 @@ int test_mm256_cmp_pd()
     int i;
     long long expect[4];
 
-    __m256d s1 = test_mm256_cmp_pd_data_model_unordered_data1;
-    __m256d s2 = test_mm256_cmp_pd_data_model_unordered_data2;
+    __m256d s1;
+    s1.vect_f64[0] = vld1q_f64(&test_mm256_cmp_pd_data.unordered_d1[0]);
+    s1.vect_f64[1] = vld1q_f64(&test_mm256_cmp_pd_data.unordered_d1[2]);
+    __m256d s2;
+    s2.vect_f64[0] = vld1q_f64(&test_mm256_cmp_pd_data.unordered_d2[0]);
+    s2.vect_f64[1] = vld1q_f64(&test_mm256_cmp_pd_data.unordered_d2[2]);
     for (int j = 0; j < 32; j++) {
         MM256_CMP_PD(j, test_mm256_cmp_pd_data_model_unordered_ret[j][i], expect);
     }
