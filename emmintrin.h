@@ -706,7 +706,7 @@ FORCE_INLINE unsigned int _mm_crc32_u32(unsigned int crc, unsigned int v)
 FORCE_INLINE unsigned __int64 _mm_crc32_u64(unsigned __int64 crc, unsigned __int64 v)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-    return __crc32cd(crc, v);
+    return __crc32cd((unsigned int)crc, v);
 #endif
 #if defined(__GNUC__) || defined(__clang__)
     __asm__ __volatile__("crc32cx %w[c], %w[c], %x[v]\n\t" : [c] "+r"(crc) : [v] "r"(v));
@@ -756,8 +756,11 @@ FORCE_INLINE __m128i _mm_set_epi64x(int64_t e1, int64_t e0)
 
 FORCE_INLINE __m128 _mm_set_ps(float e3, float e2, float e1, float e0)
 {
-    __m128 res_m128;
-    SET32x4(res_m128, e0, e1, e2, e3);
+    //__m128 res_m128;
+    //SET32x4(res_m128, e0, e1, e2, e3);
+    //return res_m128;
+    float data[4] = {e0, e1, e2, e3};
+    __m128 res_m128 = vld1q_f32(data);
     return res_m128;
 }
 

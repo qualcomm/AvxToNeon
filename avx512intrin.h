@@ -1052,7 +1052,7 @@ FORCE_INLINE __m512 _mm512_mul_round_ps(__m512 a, __m512 b, int rounding)
     res.vect_s64[3] = vshlq_n_s64(a.vect_s64[3], c);
 FORCE_INLINE __m512i _mm512_sll_epi64(__m512i a, __m128i count)
 {
-    int c = GET_LANE_S64_FROM128(count, 0);
+    int64_t c = GET_LANE_S64_FROM128(count, 0);
     __m512i result_m512i;
     result_m512i.vect_s64[0] = vdupq_n_s64(0);
     result_m512i.vect_s64[1] = vdupq_n_s64(0);
@@ -1491,7 +1491,9 @@ FORCE_INLINE __m512i _mm512_srli_epi64(__m512i a, unsigned int imm8)
 {
     __m512i result_m512i;
     if (likely(imm8 < 64)) {
-        int64x2_t vect_imm = vdupq_n_s64(-imm8);
+        int64_t shift = (int64_t)imm8;
+        int64_t neg_shift = -shift;
+        int64x2_t vect_imm = vdupq_n_s64(neg_shift);
         result_m512i.vect_u64[0] = vshlq_u64(a.vect_u64[0], vect_imm);
         result_m512i.vect_u64[1] = vshlq_u64(a.vect_u64[1], vect_imm);
         result_m512i.vect_u64[2] = vshlq_u64(a.vect_u64[2], vect_imm);
@@ -1704,7 +1706,6 @@ FORCE_INLINE __mmask8 _mm512_cmp_pd_mask(__m512d a, __m512d b, const int imm8)
     __m512d dst = _mm512_cmp_pd(a, b, imm8);
     __mmask8 res = 0;
     uint64x2_t vect_mask = vld1q_u64(g_mask_epi64);
-    __m512i tmp = _mm512_setzero_si512();
 #if defined(_MSC_VER) && !defined(__clang__)
 	uint64x2_t t[4];
 	uint64_t r[4];
@@ -1726,6 +1727,8 @@ FORCE_INLINE __mmask8 _mm512_cmp_pd_mask(__m512d a, __m512d b, const int imm8)
 #endif
 #if defined(__GNUC__) || defined(__clang__)
     uint64_t r[4];
+    __m512i tmp = _mm512_setzero_si512();
+
     __asm__ __volatile__(
         "and %[t0].16b, %[d0].16b, %[mask].16b        \n\t"
         "and %[t1].16b, %[d1].16b, %[mask].16b        \n\t"

@@ -1632,7 +1632,7 @@ int test_mm256_div_pd()
     }
     __m256d res = _mm256_div_pd(ma, mb);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm256_div_ps()
 {
@@ -1647,7 +1647,7 @@ int test_mm256_div_ps()
     }
     __m256 res = _mm256_div_ps(ma, mb);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_div_epi8()
 {
@@ -1774,7 +1774,7 @@ int test_mm512_div_pd()
     }
     __m512d res = _mm512_div_pd(ma, mb);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm512_div_ps()
 {
@@ -1789,7 +1789,7 @@ int test_mm512_div_ps()
     }
     __m512 res = _mm512_div_ps(ma, mb);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_div_round_ps()
@@ -1806,7 +1806,7 @@ int test_mm512_div_round_ps()
     }
     __m512 res = _mm512_div_round_ps(ma, mb, rounding);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_div_round_pd()
 {
@@ -1822,7 +1822,7 @@ int test_mm512_div_round_pd()
     }
     __m512d res = _mm512_div_round_pd(ma, mb, rounding);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm256_add_epi8()
 {
@@ -2089,7 +2089,7 @@ int test_mm256_add_ps()
     }
     __m256 res = _mm256_add_ps(ma, mb);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm256_add_pd()
@@ -2105,7 +2105,7 @@ int test_mm256_add_pd()
     }
     __m256d res = _mm256_add_pd(ma, mb);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_add_ps()
@@ -2121,7 +2121,7 @@ int test_mm512_add_ps()
     }
     __m512 res = _mm512_add_ps(ma, mb);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_add_pd()
@@ -2137,7 +2137,7 @@ int test_mm512_add_pd()
     }
     __m512d res = _mm512_add_pd(ma, mb);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_add_round_ps()
@@ -2154,7 +2154,7 @@ int test_mm512_add_round_ps()
     }
     __m512 res = _mm512_add_round_ps(ma, mb, rounding);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_add_round_pd()
@@ -2171,7 +2171,7 @@ int test_mm512_add_round_pd()
     }
     __m512d res = _mm512_add_round_pd(ma, mb, rounding);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_addn_ps()
@@ -2187,7 +2187,7 @@ int test_mm512_addn_ps()
     }
     __m512 res = _mm512_addn_ps(ma, mb);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_addn_pd()
@@ -2203,7 +2203,7 @@ int test_mm512_addn_pd()
     }
     __m512d res = _mm512_addn_pd(ma, mb);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_addn_round_ps()
@@ -2220,7 +2220,7 @@ int test_mm512_addn_round_ps()
     }
     __m512 res = _mm512_addn_round_ps(ma, mb, rounding);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_addn_round_pd()
@@ -2237,7 +2237,7 @@ int test_mm512_addn_round_pd()
     }
     __m512d res = _mm512_addn_round_pd(ma, mb, rounding);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_addsetc_epi32()
@@ -2289,7 +2289,7 @@ int test_mm512_addsets_ps()
     __mmask16 sign;
     __m512 res = _mm512_addsets_ps(ma, mb, &sign);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32) && (expect_sign == sign);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32) && (expect_sign == sign);
 }
 
 int test_mm512_addsets_round_ps()
@@ -2308,7 +2308,7 @@ int test_mm512_addsets_round_ps()
     __mmask16 sign;
     __m512 res = _mm512_addsets_round_ps(ma, mb, &sign, rounding);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32) && (expect_sign == sign);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32) && (expect_sign == sign);
 }
 
 int test_mm256_addsub_ps()
@@ -2324,7 +2324,7 @@ int test_mm256_addsub_ps()
     }
     __m256 res = _mm256_addsub_ps(ma, mb);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm256_addsub_pd()
 {
@@ -2339,7 +2339,7 @@ int test_mm256_addsub_pd()
     }
     __m256d res = _mm256_addsub_pd(ma, mb);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm_sub_epi8()
@@ -2427,7 +2427,7 @@ int test_mm256_sub_pd()
     }
     __m256d res = _mm256_sub_pd(ma, mb);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm256_sub_ps()
@@ -2443,7 +2443,7 @@ int test_mm256_sub_ps()
     }
     __m256 res = _mm256_sub_ps(ma, mb);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_sub_epi16()
@@ -2519,7 +2519,7 @@ int test_mm512_sub_pd()
     }
     __m512d res = _mm512_sub_pd(ma, mb);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_bslli_epi128()
@@ -2768,7 +2768,7 @@ int test_mm256_blendv_ps()
 
     res = _mm256_blendv_ps(a, b, mask);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm256_blendv_pd()
 {
@@ -2786,7 +2786,7 @@ int test_mm256_blendv_pd()
 
     res = _mm256_blendv_pd(a, b, mask);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm256_blend_ps()
@@ -2804,7 +2804,7 @@ int test_mm256_blend_ps()
 
     res = _mm256_blend_ps(a, b, imm);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm256_blend_pd()
 {
@@ -2821,7 +2821,7 @@ int test_mm256_blend_pd()
 
     res = _mm256_blend_pd(a, b, imm);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_mask_blend_epi32()
@@ -2857,7 +2857,7 @@ int test_mm512_mask_blend_ps()
 
     res = _mm512_mask_blend_ps(k, a, b);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_mask_blend_pd()
 {
@@ -2874,7 +2874,7 @@ int test_mm512_mask_blend_pd()
 
     res = _mm512_mask_blend_pd(k, a, b);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_sub_ps()
@@ -2890,7 +2890,7 @@ int test_mm512_sub_ps()
     }
     __m512 res = _mm512_sub_ps(ma, mb);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm256_subs_epi16()
@@ -3025,7 +3025,7 @@ int test_mm512_sub_round_pd()
     }
     __m512d res = _mm512_sub_round_pd(ma, mb, _MM_FROUND_NO_EXC);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_sub_round_ps()
@@ -3041,7 +3041,7 @@ int test_mm512_sub_round_ps()
     }
     __m512 res = _mm512_sub_round_ps(ma, mb, _MM_FROUND_NO_EXC);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_subr_epi32()
@@ -3072,7 +3072,7 @@ int test_mm512_subr_ps()
     }
     __m512 res = _mm512_subr_ps(ma, mb);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_subr_pd()
@@ -3088,7 +3088,7 @@ int test_mm512_subr_pd()
     }
     __m512d res = _mm512_subr_pd(ma, mb);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_subr_round_ps()
@@ -3104,7 +3104,7 @@ int test_mm512_subr_round_ps()
     }
     __m512 res = _mm512_subr_round_ps(ma, mb, _MM_FROUND_NO_EXC);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_subr_round_pd()
 {
@@ -3119,7 +3119,7 @@ int test_mm512_subr_round_pd()
     }
     __m512d res = _mm512_subr_round_pd(ma, mb, _MM_FROUND_NO_EXC);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_subsetb_epi32()
@@ -3279,7 +3279,7 @@ int test_mm256_mul_pd()
     }
     __m256d res = _mm256_mul_pd(ma, mb);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm256_mul_ps()
@@ -3295,7 +3295,7 @@ int test_mm256_mul_ps()
     }
     __m256 res = _mm256_mul_ps(ma, mb);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_mul_epi32()
@@ -3341,7 +3341,7 @@ int test_mm512_mul_pd()
     }
     __m512d res = _mm512_mul_pd(ma, mb);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_mul_ps()
@@ -3357,7 +3357,7 @@ int test_mm512_mul_ps()
     }
     __m512 res = _mm512_mul_ps(ma, mb);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm256_mulhi_epi16()
@@ -3598,7 +3598,7 @@ int test_mm512_mul_round_pd()
     }
     __m512d res = _mm512_mul_round_pd(ma, mb, _MM_FROUND_NO_EXC);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_mul_round_ps()
@@ -3614,7 +3614,7 @@ int test_mm512_mul_round_ps()
     }
     __m512 res = _mm512_mul_round_ps(ma, mb, _MM_FROUND_NO_EXC);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm_and_si128()
@@ -4131,7 +4131,7 @@ int test_mm512_set_ps()
     __m512 res = _mm512_set_ps(a[15], a[14], a[13], a[12], a[11], a[10], a[9], a[8], a[7], a[6], a[5], a[4], a[3], a[2],
                                a[1], a[0]);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_set_pd()
 {
@@ -4139,7 +4139,7 @@ int test_mm512_set_pd()
     float64_t *expect = g_test_mm512_set_pd_data.expect;
     __m512d res = _mm512_set_pd(a[7], a[6], a[5], a[4], a[3], a[2], a[1], a[0]);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm512_set1_ps()
 {
@@ -4147,7 +4147,7 @@ int test_mm512_set1_ps()
     float32_t *expect = g_test_mm512_set1_ps_data.expect;
     __m512 res = _mm512_set1_ps(a);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_set1_pd()
 {
@@ -4155,21 +4155,21 @@ int test_mm512_set1_pd()
     float64_t *expect = g_test_mm512_set1_pd_data.expect;
     __m512d res = _mm512_set1_pd(a);
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm512_setzero_ps()
 {
     float32_t *expect = g_test_mm512_setzero_ps_data.expect;
     __m512 res = _mm512_setzero_ps();
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm512_setzero_pd()
 {
     float64_t *expect = g_test_mm512_setzero_pd_data.expect;
     __m512d res = _mm512_setzero_pd();
 
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm_move_sd()
@@ -4182,7 +4182,7 @@ int test_mm_move_sd()
     mb = vld1q_f64(b);
     res = _mm_move_sd(ma, mb);
 
-    return IsEqualFloat64x2(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm_move_ss()
 {
@@ -4194,7 +4194,7 @@ int test_mm_move_ss()
     mb = vld1q_f32(b);
     res = _mm_move_ss(ma, mb);
 
-    return IsEqualFloat32x4(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm_movemask_epi8()
@@ -4378,7 +4378,7 @@ int test_mm256_extractf128_ps()
     }
     __m128 res = _mm256_extractf128_ps(ma, b);
 
-    return IsEqualFloat32x4(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 int test_mm256_extractf128_pd()
 {
@@ -4392,7 +4392,7 @@ int test_mm256_extractf128_pd()
     }
     __m128d res = _mm256_extractf128_pd(ma, b);
 
-    return IsEqualFloat64x2(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_extractf32x8_ps()
@@ -4407,7 +4407,7 @@ int test_mm512_extractf32x8_ps()
     }
     __m256 res = _mm512_extractf32x8_ps(ma, b);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_extractf64x4_pd()
@@ -4422,7 +4422,7 @@ int test_mm512_extractf64x4_pd()
     }
     __m256d res = _mm512_extractf64x4_pd(ma, b);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm_crc32_u8()
@@ -4902,7 +4902,7 @@ int test_mm256_castpd128_pd256()
     __m128d a = vld1q_f64(g_test_mm256_castpd128_pd256_data.a);
     __m256d dst = _mm256_castpd128_pd256(a);
 
-    return IsEqualFloat64x2(dst.vect_f64[0], g_test_mm256_castpd128_pd256_data.expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(dst.vect_f64[0], g_test_mm256_castpd128_pd256_data.expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm256_castpd256_pd128()
@@ -4925,7 +4925,7 @@ int test_mm256_castps128_ps256()
     __m128 a = vld1q_f32(g_test_mm256_castps128_ps256_data.a);
     __m256 dst = _mm256_castps128_ps256(a);
 
-    return IsEqualFloat32x4(dst.vect_f32[0], g_test_mm256_castps128_ps256_data.expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(dst.vect_f32[0], g_test_mm256_castps128_ps256_data.expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm256_castps256_ps128()
@@ -5132,7 +5132,7 @@ int test_mm256_insertf128_pd()
     mb = vld1q_f64(b);
     res = _mm256_insertf128_pd(ma, mb, imm);
 
-    return IsEqualFloat64x4(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x4(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 int test_mm256_insertf128_ps()
 {
@@ -5149,7 +5149,7 @@ int test_mm256_insertf128_ps()
     mb = vld1q_f32(b);
     res = _mm256_insertf128_ps(ma, mb, imm);
 
-    return IsEqualFloat32x8(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x8(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm256_permute4x64_epi64()
@@ -5270,7 +5270,7 @@ int test_mm512_castpd128_pd512()
     __m128d a = vld1q_f64(g_test_mm512_castpd128_pd512_data.a);
     __m512d res = _mm512_castpd128_pd512(a);
 
-    return IsEqualFloat64x2(res.vect_f64[0], g_test_mm512_castpd128_pd512_data.expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(res.vect_f64[0], g_test_mm512_castpd128_pd512_data.expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_castpd512_pd128()
@@ -5284,7 +5284,7 @@ int test_mm512_castpd512_pd128()
     }
     res = _mm512_castpd512_pd128(a);
 
-    return IsEqualFloat64x2(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_castps128_ps512()
@@ -5292,7 +5292,7 @@ int test_mm512_castps128_ps512()
     __m128 a = vld1q_f32(g_test_mm512_castps128_ps512_data.a);
     __m512 res = _mm512_castps128_ps512(a);
 
-    return IsEqualFloat32x4(res.vect_f32[0], g_test_mm512_castps128_ps512_data.expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(res.vect_f32[0], g_test_mm512_castps128_ps512_data.expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_castps512_ps128()
@@ -5305,7 +5305,7 @@ int test_mm512_castps512_ps128()
     }
     __m128 res = _mm512_castps512_ps128(a);
 
-    return IsEqualFloat32x4(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_cvtepi32_pd()
@@ -5317,7 +5317,7 @@ int test_mm512_cvtepi32_pd()
         a.vect_s32[i] = vld1q_s32(g_test_mm512_cvtepi32_pd_data.a + i * M128I_INT32_NUM);
     }
     __m512d res = _mm512_cvtepi32_pd(a);
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_cvtepi32_ps()
@@ -5330,7 +5330,7 @@ int test_mm512_cvtepi32_ps()
     }
     __m512 res = _mm512_cvtepi32_ps(a);
 
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_insertf32x8()
@@ -5347,7 +5347,7 @@ int test_mm512_insertf32x8()
         b.vect_f32[i] = vld1q_f32(g_test_mm512_insertf32x8_data.b + i * M128_FLOAT32_NUM);
     }
     __m512 res = _mm512_insertf32x8(a, b, imm8);
-    return IsEqualFloat32x16(res, expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x16(res, expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm512_insertf64x4()
@@ -5364,7 +5364,7 @@ int test_mm512_insertf64x4()
         b.vect_f64[i] = vld1q_f64(g_test_mm512_insertf64x4_data.b + i * M128D_FLOAT64_NUM);
     }
     __m512d res = _mm512_insertf64x4(a, b, imm8);
-    return IsEqualFloat64x8(res, expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x8(res, expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm512_inserti32x8()
@@ -5417,8 +5417,10 @@ int test_mm256_cmp_pd()
         MM256_CMP_PD(j, test_mm256_cmp_pd_data_model_unordered_ret[j][i], expect);
     }
 
-    s1 = test_mm256_cmp_pd_data_model_ordered_data1;
-    s2 = test_mm256_cmp_pd_data_model_ordered_data2;
+    s1.vect_f64[0] = vld1q_f64(&test_mm256_cmp_pd_data.ordered_d1[0]);
+    s1.vect_f64[1] = vld1q_f64(&test_mm256_cmp_pd_data.ordered_d1[2]);
+    s2.vect_f64[0] = vld1q_f64(&test_mm256_cmp_pd_data.ordered_d2[0]);
+    s2.vect_f64[1] = vld1q_f64(&test_mm256_cmp_pd_data.ordered_d2[2]);
 
     for (int j = 0; j < 32; j++) {
         MM256_CMP_PD(j, test_mm256_cmp_pd_data_model_ordered_ret[j][i], expect);
@@ -5951,7 +5953,7 @@ int test_mm_fmadd_ps()
     //printf("[%.6f, %.6f, %.6f, %.6f]\n", vals[0], vals[1], vals[2], vals[3]);
     //printf("[%.6f, %.6f, %.6f, %.6f]\n", g_test_mm_fmadd_ps_data.expect[0], g_test_mm_fmadd_ps_data.expect[1], g_test_mm_fmadd_ps_data.expect[2], g_test_mm_fmadd_ps_data.expect[3]);
 
-    return IsEqualFloat32x4(res, g_test_mm_fmadd_ps_data.expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(res, g_test_mm_fmadd_ps_data.expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm_mask_fmadd_ps()
@@ -5968,7 +5970,7 @@ int test_mm_mask_fmadd_ps()
     //vst1q_f32(vals, res);
     //printf("[%.6f, %.6f, %.6f, %.6f]\n", vals[0], vals[1], vals[2], vals[3]);
     //printf("[%.6f, %.6f, %.6f, %.6f]\n", g_test_mm_mask_fmadd_ps_data.expect[0], g_test_mm_mask_fmadd_ps_data.expect[1], g_test_mm_mask_fmadd_ps_data.expect[2], g_test_mm_mask_fmadd_ps_data.expect[3]);
-    return IsEqualFloat32x4(res, g_test_mm_mask_fmadd_ps_data.expect, DEFAULT_EPSILON_F32);
+    return IsEqualFloat32x4(res, g_test_mm_mask_fmadd_ps_data.expect, (float)DEFAULT_EPSILON_F32);
 }
 
 int test_mm_fmadd_pd()
@@ -5983,7 +5985,7 @@ int test_mm_fmadd_pd()
     vst1q_f64(vals, res);
     printf("[%.6f, %.6f]\n", vals[0], vals[1]);
     printf("[%.6f, %.6f]\n", g_test_mm_fmadd_pd_data.expect[0], g_test_mm_fmadd_pd_data.expect[1]);*/
-    return IsEqualFloat64x2(res, g_test_mm_fmadd_pd_data.expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(res, g_test_mm_fmadd_pd_data.expect, (float)DEFAULT_EPSILON_F64);
 }
 
 int test_mm_mask_fmadd_pd()
@@ -5998,5 +6000,5 @@ int test_mm_mask_fmadd_pd()
     vst1q_f64(vals, res);
     printf("[%.6f, %.6f]\n", vals[0], vals[1]);
     printf("[%.6f, %.6f]\n", g_test_mm_mask_fmadd_pd_data.expect[0], g_test_mm_mask_fmadd_pd_data.expect[1]);*/
-    return IsEqualFloat64x2(res, g_test_mm_mask_fmadd_pd_data.expect, DEFAULT_EPSILON_F64);
+    return IsEqualFloat64x2(res, g_test_mm_mask_fmadd_pd_data.expect, (float)DEFAULT_EPSILON_F64);
 }

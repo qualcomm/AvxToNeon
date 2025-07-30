@@ -1859,6 +1859,8 @@ FORCE_INLINE __int32 _mm256_extract_epi32 (__m256i a, const int index)
                 return vgetq_lane_s32(a.vect_s32[1], 3);
         }
     }
+    // this will never happen
+    return vgetq_lane_s32(a.vect_s32[1], 0);
 #endif
 }
 
@@ -1887,6 +1889,8 @@ FORCE_INLINE __int64 _mm256_extract_epi64 (__m256i a, const int index)
             return vgetq_lane_s64(a.vect_s64[1], 1);
         }
     }
+    // this will never happen
+    return vgetq_lane_s64(a.vect_s64[1], 1);
 #endif
 }
 
